@@ -1,0 +1,123 @@
+### Setup: 
+- https://gist.github.com/actsasgeek/19952660399be0c6dbb0407fe8c56ec4
+- python -m ipykernel install --user --name en605645 --display-name "Python (en605645)"
+- conda activate en605645
+
+### Oreintation:
+- Modules start monday morning
+- Self Check and Programing Assignment each week
+- Lectures followed by quiz, take notes
+- Do readings (do not need to read as if being quized on it), look at book examples. 
+- Thursday night self-check due - goal is to prime for programing assignment
+- Thursday night office hours (8:00) 
+- Friday/Saturday: 2 Peer reviews of other student self-checks
+- Programing assignment and quiz are do Sunday night 
+- Do quiz earlier (wed/thur)
+- Quizes include material from ealrier lectures
+- Functions should not be more than 20 executable lines 
+- Dont need unit tests for A* (but write why? - since its being tested below)
+- make sure it runs in enviroment
+- extended peer review until noon sunday
+
+
+Module 1: Background history of AI
+- Types of AI:
+	- System AI: Focus on agents that perceive and act in an enviroment. Reasoning, Decision Making
+	- Internet AI: ML model embedded in a larger system to do a specific task on structered input, produce structured output (spam filter, recommdation engine, spam filter)
+
+- 2x2 Matrix of What is Systems AI? (4 views)
+	- 1) thinks like humans | 2) act like humans: Imitate human behavior
+	- 3) think rationally | 4) act rationally: Maxamize performance or metric
+	- Tradeoffs!
+	- R&N use (4) as "standard model of ai"
+- Agents: 
+	- perception -> action 
+
+- Standard Model of AI: Rational agents chooses the action that maximizes expected performance. Uses infomation (beliefs), objectives (utility/metric) and actions (policies). Handle uncertainty and trade-offs
+
+- Refinements to Standard Model: 
+	- Bounded Rationality: Approxamation of rationality 
+	- Uncertain human objectives: fully known objectives are unrealistic so systems should benifit humans while being uncertain about true objectives.
+
+- Philisophical roots of AI: 
+	- reasoning as symbol manipulation, symbols = internal represnetions of things. 
+
+- Mathmatical Foundation: 
+	- logic, probability and compution
+	- Bridges logic and compution
+
+- Inspiration from biology/neuroscience and psychology: 
+	- more of a metaphor, not actually exact.
+
+- Linguistics: formal structure, NLP, language as infomation proccessing. (LLMs)
+
+- Control Theory: 
+	- predates AI, study of optimal actions
+
+
+- History of AI: 
+	- Cycle of hype, disapoitnment, renewed advances. 
+	- Symbolic -> knowledge-based  | Probabalistic -> ML and data | Deep learning resurgance (LLMs)
+
+- Ethics: 
+	- No doctrine or guardrails for protecting ethics of developer (unlike doctor) 
+	- privacy, misuse, control.
+	- ethics and control should be designed upfront
+	- corrigibility: the quality of being capable or willing to be corrected
+- Disco Prompts: 
+	- Where would LLMs be in the 2x2 matrix of system type: think reationliy but act as human
+	- "Fun", like in a video game. 
+	- LLM cycle, part of "Big Data" cycle - maybe replaced by contintues data model (bigger data) or smaller data model (small, specific training) or non-data based model altogether
+
+
+Module 1: Agents: 
+	- An agent perceives (percepts) and act in an an enviroment via actuators. 
+	- think of a robot 
+	- Agents Functions map percept to actions, can be determintic or stochastic (same or diff response to same percept). Abstract definitions diff from impl
+	- Permfomance Measure: qiuantify successs (what is rational action in env)
+	- Agent: chooses function to get maximum performance. 
+	- PEAS - Task Enviroment: 
+		- Permfomance Measure: Metric
+		- Enviroment: What/Where
+		- Actuators: Output
+		- Sensors: Input
+
+	- Env vary in multple ways: 
+		- Observable: can see full system state
+		- Episodic vs sequential: do percetps and actions feedback into eachother (sequential) or is a the agent used for a single episode of percept->action
+	- Types of Agents: 
+		- Simple reflex agent: responds directly to percept, no internal state, works in fully observable and simple env. (also episodic). Based on condiont action rules
+		- Model Based Agent: has state to track unobserved aspects. Uses model of env to inform decisions.
+		- Goal Based Agents: acts to achieve explicitly defined goal. Sequential. MOre flexible. 
+		- Utility Based Agents: maxamizes expected utility. Handles trade-offs
+		- Learning Agents: improve performance over time. Many components. Usefull in changing or unknown env. 
+		- 
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

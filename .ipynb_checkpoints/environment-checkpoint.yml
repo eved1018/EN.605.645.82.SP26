@@ -1,0 +1,16 @@
+name: en605645
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - scipy
+  - matplotlib
+  - seaborn
+  - jupyter
+  - jupyterlab
+  - ipython
+  - ipykernel
+  - networkx
+  - python-box=7.3
+  - streamlit=1.45
