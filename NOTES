@@ -71,53 +71,62 @@ Module 1: Background history of AI
 
 
 Module 1: Agents: 
-	- An agent perceives (percepts) and act in an an enviroment via actuators. 
-	- think of a robot 
-	- Agents Functions map percept to actions, can be determintic or stochastic (same or diff response to same percept). Abstract definitions diff from impl
-	- Permfomance Measure: qiuantify successs (what is rational action in env)
-	- Agent: chooses function to get maximum performance. 
-	- PEAS - Task Enviroment: 
-		- Permfomance Measure: Metric
-		- Enviroment: What/Where
-		- Actuators: Output
-		- Sensors: Input
+- An agent perceives (percepts) and act in an an enviroment via actuators. 
+- think of a robot 
+- Agents Functions map percept to actions, can be determintic or stochastic (same or diff response to same percept). Abstract definitions diff from impl
+- Permfomance Measure: qiuantify successs (what is rational action in env)
+- Agent: chooses function to get maximum performance. 
+- PEAS - Task Enviroment: 
+	- Permfomance Measure: Metric
+	- Enviroment: What/Where
+	- Actuators: Output
+	- Sensors: Input
 
-	- Env vary in multple ways: 
-		- Observable: can see full system state
-		- Episodic vs sequential: do percetps and actions feedback into eachother (sequential) or is a the agent used for a single episode of percept->action
-	- Types of Agents: 
-		- Simple reflex agent: responds directly to percept, no internal state, works in fully observable and simple env. (also episodic). Based on condiont action rules
-		- Model Based Agent: has state to track unobserved aspects. Uses model of env to inform decisions.
-		- Goal Based Agents: acts to achieve explicitly defined goal. Sequential. MOre flexible. 
-		- Utility Based Agents: maxamizes expected utility. Handles trade-offs
-		- Learning Agents: improve performance over time. Many components. Usefull in changing or unknown env. 
-		- 
+- Env vary in multple ways: 
+	- Observable: can see full system state
+	- Episodic vs sequential: do percetps and actions feedback into eachother (sequential) or is a the agent used for a single episode of percept->action
+- Types of Agents: 
+	- Simple reflex agent: responds directly to percept, no internal state, works in fully observable and simple env. (also episodic). Based on condiont action rules
+	- Model Based Agent: has state to track unobserved aspects. Uses model of env to inform decisions.
+	- Goal Based Agents: acts to achieve explicitly defined goal. Sequential. MOre flexible. 
+	- Utility Based Agents: maxamizes expected utility. Handles trade-offs
+	- Learning Agents: improve performance over time. Many components. Usefull in changing or unknown env. 
+	- ML is not learning agents since ML is trained before hand not "on the job"
+	- Generative AI expands traidtional concepts (not in these types)
+
+Module 1: Ethics
+- Weak vs Strong AI: 
+	- Weak: machines can only ever simulate intelligent behavior, functionally useful 
+	- Strong AI: AI can have conciousness, understanding and intentionality
+
+- Turing reframed this question in terms of behavior: can someone distinguesh btw human and machine
+- LLMs (informally) passed turing test. 
+- Consciousness is still a mystery in people (therefore also ai)
+- Ethics: resposibilty to reduce harm. Profesional codes, norms. Need proactive saftey.
+- Fairness: does everyone equal access to AI tools. Does AI fairly represent everybody.
+
+Module 1: Algorithms
+- When to use AI?
+	- When a graph algorthim wont work 
+	- when patterns must be learnt or infered
+	- clarify missing relationships
+	- NLP 
+	- Manage preferences
+	- Learning 
+	- adapt to dynmaic constraints
+	- "Fuzzy"
+	- System!
+
+- Common classic algorthims w AI flavor (gray area): Union-find, DFS, binary Search, Tarjas algorithim, Longest common subseq, Dijkstras, Bellman-Ford, Suffix-trees, LP
+- Dynamic Programming is AI
 
 
+- Which AI to use?
+	- Symbolic AI: reason through rules, constraintd or search in a structered env
+	- Discriminative ML: Predict outcome
+	- Generative ML: transform data from type A to type B
 
-
-
-
-
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- 
 
 
 
