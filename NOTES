@@ -126,7 +126,57 @@ Module 1: Algorithms
 	- Discriminative ML: Predict outcome
 	- Generative ML: transform data from type A to type B
 
-- 
 
+
+Module 2: State Space Search
+
+- general approuch to problem solving: turn problem into graph and then form the solution as a path through the graph
+
+- 4 key elements: States, Actions, Transitions, and cost.
+	- States are the way of representing the problem space (set of values)
+		- Initial state S~0~ -> starting configuration of problem 
+		- Goal state S~g~ -> succesful termination state
+		- Failure state S~f~ -> non succesful termination state
+	- Actions (a): set of things an agent can do to change the state
+	- Transitions (T(s,a)): rules for moving between states based on current state and action taken 
+	- Cost c(s,a,a`): associated cost of action 
+
+- Succesor function: given a state get all transtion states
+
+- Composing problems in terms of the 4 elements provides a framework for solving them using a search algorithm over the state graph of the problem 
+
+- Best to specify problem in terms of simple and basic actions/transtions and to encode states in a machine freindly form (so u can implement it) 
+
+- branching factor (b): average number of actions per state
+- depth (d): depth of the smallest solution
+- max (m): maximum depth of the search tree 
+
+- Search algs: 
+	- DFS: LIFO (stack), incomplete (not all paths searched), non-opitmal (bc not complete), Space: O(bm) | Time O(b^m)
+	- BFS: FIFO (queue) , complete (all nodes are reached), is optimal if costs are uniform, Space O(b^d) | Time O(b^m) - more space 
+	- Iterative deepening: search every depth of tree one depth at a time using DFS -> complete so optimality is ensured
+
+
+
+- Informed Search: use cost to guide search 
+	- Uniform Cost Search (UCS):  
+		- use a priority queue to track "frontier" (queue in bfs), using "total path cost" as key so we traverse in order of low->high cost
+		- Succesor function returns states based on the transition funciton and cost calculation
+		- complete (searches all nodes)
+		- optimal even in varying action cost problems
+		- same space/time requirements as BFS (bc it is bfs) 
+
+- Greedy (best first search):
+	- pick cheapest action at each state as hueristic for getting closer to the goal - using only the cost of the action (unlike UCS which uses path cost)
+	- use priority queue to hold state costs
+	- admissible huerstic funciton: a function where the huerstic is always less than or equal to the true cost
+	
+- A* search: 
+	- use f(n) = g(n) + h(n) as the key in the priority queue
+	- g(n) is the path cost to the node
+	- h(n) is a huerisitc for how much closer to the goal this node is 
+	- optimal and complete 
+	- If theres a path to the goal it will expand as few nodes as possible (or as well as the hueristic is)
+	- 
 
 
