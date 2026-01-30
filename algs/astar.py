@@ -9,6 +9,20 @@ def priority_enqueue(pq: List, element: Tuple[int, int], priority: int | float):
     return
 
 
+def priority_queue_get(pq, needle):
+    for node, priority in pq:
+        if node == needle:
+            return (node, priority)
+    return None
+
+
+def priority_queue_update(pq, element, priority):
+    for i, node in enumerate(pq):
+        if node[0] == element:
+            pq[i] = (element, priority)
+            return
+
+
 def priority_dequeue(pq: List):
     return pq.pop(0)[0]
 
@@ -22,13 +36,12 @@ def get_neighbors(world: List[List[str]], node: Tuple[int, int], moves: List[Tup
         x: int = node[0] + dx
         y: int = node[1] + dy
         if 0 <= x <= max_x and 0 <= y <= max_y and world[y][x] != "🌋":
-            valid_moves.append((dx, dy))
-    # print(f"T({node[0]}, {node[1]}) -> {valid_moves}")
+            valid_moves.append((x, y))
     return valid_moves
 
 
 def heuristic(start: Tuple[int, int], goal: Tuple[int, int]) -> int | float:
-    distance = sqrt((goal[0] - start[0]) ** 2 + (goal[1] - start[1]) ** 2)  # euclidean distance?
+    distance = sqrt(((goal[0] - start[0]) ** 2) + ((goal[1] - start[1]) ** 2))  # euclidean distance?
     # distance = 0
     return distance
 
@@ -44,28 +57,39 @@ def a_star_search(
     ### YOUR SOLUTION HERE ###
     ### YOUR SOLUTION HERE ###
     pq: List[Tuple[int, int]] = []
-    visited: Set[Tuple[int, int]] = set()
-    actions: List[Tuple[int, int]] = []
 
-    prev = start
+    explored: Set[Tuple[int, int]] = set()
+
+    parents: Dict[Tuple[int, int], Tuple[int, int]] = {}  # child -> parent map
+
+    path_costs = {start: 0.0}
+
     priority_enqueue(pq, start, 0)
 
     while pq:  # Check if more neighbors to traverse
-        offset: Tuple[int, int] = priority_dequeue(pq)
-        actions.append(offset)
-        node = (prev[0] + offset[0], prev[1] + offset[1])
-        x, y = node
-        prev = node
+        node: Tuple[int, int] = priority_dequeue(pq)
 
-        if node == goal:
-            return actions
+        if node == goal:  # backtrack
+            actions = []
+            while node != start:
+                parent = parents[node]
+                actions.append((node[0] - parent[0], node[1] - parent[1]))
+                node = parent
+            return actions[::-1]  # reverse actions
 
-        visited.add(node)
-        for dx, dy in get_neighbors(world, node, moves):
-            neighbor = (x + dx, y + dy)
-            if neighbor not in visited:
-                priority: int | float = costs[world[neighbor[1]][neighbor[0]]] + heuristic(neighbor, goal)
-                priority_enqueue(pq, (dx, dy), priority)
+        explored.add(node)
+
+        for neighbor in get_neighbors(world, node, moves):  # add nodes to frontier
+            if neighbor not in explored:
+                cost = path_costs[node] + costs[world[neighbor[1]][neighbor[0]]]
+
+                if neighbor not in path_costs or cost < path_costs[neighbor]:
+                    priority: float = cost + heuristic(neighbor, goal)
+                    priority_enqueue(pq, neighbor, priority)
+
+                    # store for later
+                    parents[neighbor] = node
+                    path_costs[neighbor] = cost
     return []
 
 
@@ -81,7 +105,6 @@ def pretty_print_path(world: List[List[str]], path: List[Tuple[int, int]], start
 
     for dx, dy in path:
         node = (x + dx, y + dy)
-        print(node)
         total_cost += costs[world[y][x]]
         tile = map[y][x]
         if (dx, dy) == (0, 1):
@@ -146,6 +169,7 @@ MOVES = [(0, -1), (1, 0), (0, 1), (-1, 0)]
 COSTS = {"🌾": 1, "🌲": 3, "⛰": 5, "🐊": 7}
 
 world = small_world
+
 start = (0, 0)
 goal = (len(small_world[0]) - 1, len(small_world) - 1)
 costs = COSTS
