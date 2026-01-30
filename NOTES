@@ -157,7 +157,6 @@ Module 2: State Space Search
 	- Iterative deepening: search every depth of tree one depth at a time using DFS -> complete so optimality is ensured
 
 
-
 - Informed Search: use cost to guide search 
 	- Uniform Cost Search (UCS):  
 		- use a priority queue to track "frontier" (queue in bfs), using "total path cost" as key so we traverse in order of low->high cost
@@ -173,8 +172,8 @@ Module 2: State Space Search
 	
 - A* search: 
 	- use f(n) = g(n) + h(n) as the key in the priority queue
-	- g(n) is the path cost to the node
-	- h(n) is a huerisitc for how much closer to the goal this node is 
+	- g(n) is the path cost to the node (UCS)
+	- h(n) is a huerisitc for how much closer to the goal this node is  (greedy)
 	- optimal and complete 
 	- If theres a path to the goal it will expand as few nodes as possible (or as well as the hueristic is)
 	- 
