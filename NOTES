@@ -3,7 +3,7 @@
 - python -m ipykernel install --user --name en605645 --display-name "Python (en605645)"
 - conda activate en605645
 
-### Oreintation:
+### Orientation:
 - Modules start monday morning
 - Self Check and Programing Assignment each week
 - Lectures followed by quiz, take notes
@@ -20,7 +20,7 @@
 - extended peer review until noon sunday
 
 
-Module 1: Background history of AI
+# Module 1: Background history of AI
 - Types of AI:
 	- System AI: Focus on agents that perceive and act in an enviroment. Reasoning, Decision Making
 	- Internet AI: ML model embedded in a larger system to do a specific task on structered input, produce structured output (spam filter, recommdation engine, spam filter)
@@ -70,7 +70,7 @@ Module 1: Background history of AI
 	- LLM cycle, part of "Big Data" cycle - maybe replaced by contintues data model (bigger data) or smaller data model (small, specific training) or non-data based model altogether
 
 
-Module 1: Agents: 
+## Agents: 
 - An agent perceives (percepts) and act in an an enviroment via actuators. 
 - think of a robot 
 - Agents Functions map percept to actions, can be determintic or stochastic (same or diff response to same percept). Abstract definitions diff from impl
@@ -94,7 +94,7 @@ Module 1: Agents:
 	- ML is not learning agents since ML is trained before hand not "on the job"
 	- Generative AI expands traidtional concepts (not in these types)
 
-Module 1: Ethics
+## Ethics
 - Weak vs Strong AI: 
 	- Weak: machines can only ever simulate intelligent behavior, functionally useful 
 	- Strong AI: AI can have conciousness, understanding and intentionality
@@ -105,7 +105,7 @@ Module 1: Ethics
 - Ethics: resposibilty to reduce harm. Profesional codes, norms. Need proactive saftey.
 - Fairness: does everyone equal access to AI tools. Does AI fairly represent everybody.
 
-Module 1: Algorithms
+## Algorithms
 - When to use AI?
 	- When a graph algorthim wont work 
 	- when patterns must be learnt or infered
@@ -128,11 +128,11 @@ Module 1: Algorithms
 
 
 
-Module 2: State Space Search
+# Module 2: State Space Search
 
 - general approuch to problem solving: turn problem into graph and then form the solution as a path through the graph
 
-- 4 key elements: States, Actions, Transitions, and cost.
+- 4 key elements: States, Actions, Transitions, and Cost. [SATC]
 	- States are the way of representing the problem space (set of values)
 		- Initial state S~0~ -> starting configuration of problem 
 		- Goal state S~g~ -> succesful termination state
@@ -176,6 +176,142 @@ Module 2: State Space Search
 	- h(n) is a huerisitc for how much closer to the goal this node is  (greedy)
 	- optimal and complete 
 	- If theres a path to the goal it will expand as few nodes as possible (or as well as the hueristic is)
-	- 
+	- Point of using combined priority is to use fewest nodes possible -> avoid loops or dead ends and head towards goal 
 
+# Module 3: Logistic Regression
+
+- Good old fashion AI [GOAI]:
+	- problem solving, general purpose, operational, engineering 
+- Machine Learning [ML]:
+	- Pattern discovery 
+	- specific / tailored to problem 
+	- representational -  represent pattern
+	- data driven!!!!!!
+- Catagories of ML: 
+	- Supervised 
+		- known features and known output
+	- Unsupervised 
+		- known features, dont know what they represent
+	- Reinforcement Learning [RL]
+
+- 2 typsed of Supervised Learning: 
+	- Regression: numerical output
+		- predict/find pattern between some input(s) and some numeric output - so that given a new input we can predict the output 
+		- Types of Algorithms:
+			- Linear regression
+			- Artificial nureal networks
+			- KNN
+			- fuzzy controls
+			- regression trees
+
+	- Classification: label output 
+		- predict label (non-numeric) from feature given data set
+		- Types of algorithms:
+			- Logistic regression
+			- SVM
+			- decision trees
+			- baysian networks 
+			- KNN
+
+
+- [Features]: input to ML:
+	- continues: numeric measurements
+	- discrete : numerical counts, rankings dates or catagorical data 
+- diff algs are better w diff features - but can coerce (encode) data types to fit algs
+- each alg has tradeoffs
+
+- Linear Regression: 
+	- y = mx + b : m = slope (dy/dx) , b = y-intercept
+	- goal is to find a line that fits the points
+	- but how to we find that line: 
+		- Gradiant Decent: 
+			- Least Mean squared error [MSE]: for n observations of (x,y): MSE = J(m,b) = (1/n) Σ (f(x - y)^2 (use f(x) = mx+b for a given m and b and compare that to the observed y)
+			- we call f(x) y-hat
+			- plotting MSE over different slope values produces a parabula for linear functions
+			- in the case of more than one input feature:
+				- we refer to the slopes for each input x1, x2, ... as theta1, theta2 ... (linear coefs)
+				- assume there is an x0 that is always 1 then we can write: Θx = yhat, where theta and x are vectors of slopes and features and y-hat is a vector of estimates 
+				- J(Θ) = (1/2)(1/n) Σ (yhat(i) - y(i))^2 , for i feauters
+				- Goal of alg is to slowly update Θj until we converge on a global minimum: 
+					- for a learning rate α: if too big alg wont converge, if too small it will take a while
+					- Θ(j) = Θ(j) - α (dj/dΘ(j)) : ie update theta until we get a global minimum 
+					-  (dj/dΘ(j)) = (1/n) × Σ(ŷᵢ - yᵢ) × xᵢⱼ
+
+				- gradiant decent is better than an exact solution bc its faster for large data 
+
+
+
+Tips for Regrssion: 
+	- Mean Nomrmilization: normalize values (features) to mean: x = x - mean/ range 
+		- need to de-normalize prefictions/output 
+	- Binary encoding: make catagory 0 or 1- also called dummy or indicator variables - turns the regression into different effective intercepts (with the same slope)
+	- converting catagorical data into numerical isnt good, instead use bitmask to encode all the catagories of an observation - ie 0010 says observation is part of catagory 1 and not any others 
+
+
+Logistic Regression: classification
+	- One possible alg: clamp linear regression to 0 or 1 using some threshold - not good bc a single observation can throw off the threshold
+	- instead use sigmoidal function : yhat = 1/1+e^-z = f(x) where z is the regression formula 
+	- yhat ranges from 0->1 and is the probability x belongs to the class. then classify by some threshold 
+	- use log as error function:
+		- error = y * yhat + (1 - y) * log(1-yhat)
+		- J(theta) = -1/n  Σ ylog(yhat) + (1-y) log(1 - yhat) for each obs i
+	- if threre are 3 or more catagories we train a clasifiers on each catagory and take the largest prob output as the asnwer
+
+Support Vector Machine: 
+	- discriminant: a way to draw a distinction btw two things
+	- hinge loss fn: J(theta) = C Σ y* cost(yhat) + (1-y) * cost(1 - yhat)
+		- C controls how we deal w outliers: Larger -> more penalized 
+	 - SVM is a linear discriminant that used the hinge loss fn as its classifier 
+	 - Support vectors are the lines that discriminate between two clusters (at least 2) and the margin is the space btw the suppport vectors and the classifying line
+	 - SVMS are solved w quadratic programming (optimization) but can use gradiant decent 
+	 - Concept == class in a classification problem. A class can be linearly seperable if it can be perfectly described by a hyperplane, else it is non-linearly seperable.
+	- Use a kernel function to project data into a higher dimension and then seperate in that dimension space
+
+Model Evaluation: 
+	- how well does a model perfrome on unseen instances?
+	- is thre a better model?
+	- ML assumes that unseen data is like the things seen already - representative feature set
+	- Permfomance Metrics: 
+		- MSE (mean squared error) - good for regression 
+		- Confusion matrix: good for classification
+			- TP: predicted 1 and is 1
+			- FN: predicted 0 and is 0
+			- FP: preficted 1 and is 0
+			- FN: predited 0 but is 1
+		- accuracy = TP+TN / n
+		- error = FN + FP / n 
+		- accuracy and error arent great metrics since:
+			- FP and FN can be weighted differently, one can be "worse" than the other (cancer test) overwarn vs underwarn
+			- classes may have unequal distribution in the test data (easy to always predict 1 or 0)
+		- recall = TP / TP + FN -> out of all the data how many positives did we get 
+		- precision = TP / Tp + FP  -> out of all the positives predicted, how many were correct 
+		- TP + FN = number of positives in actuality 
+		- tradeoff btw precision and recall
+
+Cross Validation: 
+	- randomly split data into sets (called folds). Then train on all-but-1 fold and test on the left out fold. 
+
+Fixing Models: 
+	- how do we reduce error?
+	- getting more data is not always the solution
+	- Bias-Variance tradeoff: 
+		- how model performs on training set vs test set 
+		- high-bias => model under fits the input data 
+		- low-bias => model over-fits the input data 
+		- low variance => low prediction error
+		- high-variance => high error of prediction 
+	- bias =>  how much the input data/model influences the output
+	- train on n% of the training set and calculate metrics then train on the test set and calc metric, repeat with increasing % of input data. Error should decrease as we include more data in the training set
+	- if the error converges then it is high bias 
+		- more data wont help
+		- add more features
+		- add feature transformations
+	- if error doesnt converge then it is high variance: 
+		- add more data
+		- reucde features
+		- remove transformations
+
+Review: 
+	- n = number of rows ie observations
+	- 
 
