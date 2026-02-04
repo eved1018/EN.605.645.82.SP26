@@ -76,7 +76,7 @@ def calc_log_error(thetas, ps, ys):
 def update_log_theta(thetas, ps, ys, yhats, alpha):
     n = len(ys)
     ds = [(yh - y) for yh, y in zip(yhats, ys)]
-    js = [sum(x * d for x, d in zip(xs, ds)) for xs in ps]
+    js = [sum(x * d for x, d in zip(col, ds)) for col in zip(*ps)]
     return [t - alpha * j / n for t, j in zip(thetas, js)]
 
 
@@ -93,7 +93,7 @@ def logreg(ps: list[list[float]], ys: list[float], epsilon: float, alpha: float)
         thetas = update_log_theta(thetas, ps, ys, yhats, alpha)
         prev_error = cur_error
         cur_error, yhats = calc_log_error(thetas, ps, ys)
-
+        
     return thetas
 
 
