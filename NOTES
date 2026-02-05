@@ -275,9 +275,9 @@ Model Evaluation:
 		- MSE (mean squared error) - good for regression 
 		- Confusion matrix: good for classification
 			- TP: predicted 1 and is 1
-			- FN: predicted 0 and is 0
+			- TN: predicted 0 and is 0
 			- FP: preficted 1 and is 0
-			- FN: predited 0 but is 1
+			- FN: predicted 0 but is 1
 		- accuracy = TP+TN / n
 		- error = FN + FP / n 
 		- accuracy and error arent great metrics since:
