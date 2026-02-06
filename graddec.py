@@ -80,7 +80,7 @@ def update_log_theta(thetas, ps, ys, yhats, alpha):
     return [t - alpha * j / n for t, j in zip(thetas, js)]
 
 
-def logreg(ps: list[list[float]], ys: list[float], epsilon: float, alpha: float):
+def logreg(ps: list[list[float]], ys: list[int], epsilon: float, alpha: float):
     for i in ps:
         i.insert(0, 1.0)
 
@@ -93,17 +93,17 @@ def logreg(ps: list[list[float]], ys: list[float], epsilon: float, alpha: float)
         thetas = update_log_theta(thetas, ps, ys, yhats, alpha)
         prev_error = cur_error
         cur_error, yhats = calc_log_error(thetas, ps, ys)
-        
+
     return thetas
 
 
 epsilon = 1 * 10**-7
 alpha = 0.1
 
-ps = [[1.0], [3.0]]
-ys = [2.0, 1.0]
-thetas = linreg(ps, ys, epsilon, alpha)
-print(thetas)
+# ps = [[1.0], [3.0]]
+# ys = [2.0, 1.0]
+# thetas = linreg(ps, ys, epsilon, alpha)
+# print(thetas)
 
 
 ps = [[1.1], [2.7]]
