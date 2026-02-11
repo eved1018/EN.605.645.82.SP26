@@ -313,5 +313,57 @@ Fixing Models:
 
 Review: 
 	- n = number of rows ie observations
-	- 
+	- m is number of features in each observations
+
+# Module 4: Local Search: 
+- allows us to solve problems even if we dont know how to get to the local, but can verify a goal. 
+- instead of state space search (transitions) we use an evaluation function to drive the search towards the solution 
+- can be used when evaluation fn doesnt have a well-defined derivitave (requireed for gradiant decent)
+- Hill Climbing: 
+	- pick a change that makes the evaluation search better
+	- can be min or max problem 
+	- can end up in local optimum - (local max/min) 
+- Refinements: 
+	- Stochastic hill climbing: generate succesor states at random, and pick the best (using eval fn) - good to avoid local-optimum
+	- Random Restart: pick a random starting point and apply hill climbing - then do again a few times and pick the best of each time. 
+	- Simualted Annealing: use a decreasing "tempature" to control random selection of candidate succesor (even if it is worse than the prev state). as time goes we make inferior moves less often 
+		```while True
+			temp = annealing_schedule(temp)
+			if temp == 0; return 
+			candidate = random_succesor(current)
+			diff = evaluation(candidate) - evaluation(current)
+			if diff > 0; current = candidate
+			else if rand() < e^(diff/temp); current = candidate```
+
+	- Beam Search: search k states at once: 
+		- psuedocode: 
+			- pick k starting states
+			- generate and evaluate each states succesor 
+			- pick best 2k states
+			- check if one is at the goal 
+			- loop if not
+
+- Evolutionary Computing (genetic algorthims)
+	- uses biological evolution as model for state search 
+	- use survivial of the fittest to get the best solution from a population of solutions
+	- encode each candidate solution as a "gene" ie in geneitc code (genetic encoding)
+	- psuedocode: 
+		- create popualtion of solutions
+		- evaluate fitness for each solution in pop
+		- pick random set of population called parents
+		- "breed" parents to generate childen (ie new solutions) 
+			- use mutation and reomcbination (crossover) at random to create new soltuions from old ones 
+
+	- genetic encoding - gene -> linear oderding of symbols in state space - some sort of array that captures the key properties of a solution - influences succesor states - no succesor functions in genetic alg
+	- phenotype refers to the solution itself (decoded from "gene")
+	- crossover and mutation must match encoding (ie guessian nose for real numbers)
+	- can encode mutation rate or crossover rate in the gene itself 
+	- fitness score should be higher if better else use 1/1+f 
+	- Picking parents: 
+		- Roullete wheel: pick parents randomly but higher fitness gives better odds to be selected
+		- Tournament: pick n individuals at random and pick the one with the highest fitness. 
+- Diff types of Evolutionary computing refer to diff types of encodings: 
+	- genetic alg: linear encoding (array)
+	- genetic programing: tree (lisp, symbolic)
+	- evolution programming: finitie state machine `
 
