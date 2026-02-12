@@ -12,11 +12,14 @@ TOURNAMENT_SIZE = 10
 def encode_chrarr(pheno):
     return list(pheno)
 
+
 def decode_chrarr(geno):
     return "".join(geno)
 
+
 def generate_chromosome(chromosome_length: int, alphabet: str) -> List[str]:
     return [random.choice(alphabet) for _ in range(chromosome_length)]
+
 
 def fitness(chromosome: List[str], target: List[str]) -> float:
     score = 0
@@ -28,12 +31,16 @@ def fitness(chromosome: List[str], target: List[str]) -> float:
 def sort_population(population: List[List[str]], target: List[str], fitness: Callable) -> List[List[str]]:
     return sorted(population, key=lambda chromosome: fitness(chromosome, target))
 
+
 def tournament(population: List[List[str]], target: List[str], sample_size: int, fitness: Callable):
     sub_population = random.sample(population, k=sample_size)
     sub_population = sort_population(sub_population, target, fitness)
     return sub_population[-1], sub_population[-2]
 
-def recombine(chromosome1: List[str], chromosome2: List[str], cross_over_index: int, crossover_rand: float, crossover_rate: float) -> Tuple[List[str], List[str]]:
+
+def recombine(
+    chromosome1: List[str], chromosome2: List[str], cross_over_index: int, crossover_rand: float, crossover_rate: float
+) -> Tuple[List[str], List[str]]:
     if crossover_rand >= crossover_rate:
         return chromosome1, chromosome2
     child1 = chromosome1[:cross_over_index] + chromosome2[cross_over_index:]
@@ -47,8 +54,11 @@ def mutate(chromosome: List[str], mutate_rand: float, mutate_rate: float) -> Lis
         chromosome[index] = random.choice(ALPHABET)
     return chromosome
 
+
 def breed(parent1, parent2, crossover_rate, mutate_rate):
-    child1, child2 = recombine(parent1, parent2, random.randint(0, len(parent1) - 1), random.uniform(0, 1), crossover_rate)
+    child1, child2 = recombine(
+        parent1, parent2, random.randint(0, len(parent1) - 1), random.uniform(0, 1), crossover_rate
+    )
     child1 = mutate(child1, random.uniform(0, 1), mutate_rate)
     child2 = mutate(child2, random.uniform(0, 1), mutate_rate)
     return child1, child2
@@ -59,8 +69,7 @@ def describe_chromosome(chromosome: List[str], target: List[str], fitness: Calla
 
 
 def genetic_algorithm(target_str: str):
-
-    target: List[str] = encode_chrarr(target_str) # encode
+    target: List[str] = encode_chrarr(target_str)  # encode
     population: List[List[str]] = [generate_chromosome(len(target), ALPHABET) for _ in range(POPULATION_SIZE)]
 
     for generation in range(MAX_GENERATION):
