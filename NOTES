@@ -287,6 +287,11 @@ Model Evaluation:
 		- precision = TP / Tp + FP  -> out of all the positives predicted, how many were correct 
 		- TP + FN = number of positives in actuality 
 		- tradeoff btw precision and recall
+		- False Positives measure incorrect calls to action (for example, saying there’s a fire when there isn’t.). If acting is expensive (or scary) then we should minimize False Positives
+		- [Tradeoff of Metrics]:
+			- minimize FPR: acting is expensive ("cost of action is  more than the cost of inaction")
+			- minimize FNR: non-acting is expensive ("cost of inaction is more than the cost of action")
+			- Minimize error rate: cost of being wrong is the same in either direction 
 
 Cross Validation: 
 	- randomly split data into sets (called folds). Then train on all-but-1 fold and test on the left out fold. 
@@ -365,7 +370,73 @@ Review:
 - Diff types of Evolutionary computing refer to diff types of encodings: 
 	- genetic alg: linear encoding (array)
 	- genetic programing: tree (lisp, symbolic)
-	- evolution programming: finitie state machine `
+	- evolution programming: finitie state machine
+
+
+# Module 5: Adviserial Search 
+
+- Games: special form of state space search using payoffs 
+	- states: game/board, pieces, cards
+	- actions: moves
+	- transition model: turns, resolving game states
+	- costs: usualy uniform 
+	- [Payoffs]: utility involved with end of game (ie 1 point for win)
+- Game tree: shows game from start and end as succesion of states and actions
+- a game is said to be "solved" if you can draw the complete game tree
+- "ply": action of single player (ie a players turn) a move is when both players take a turn (ply)
+- game tree is extensive form - enumarate all possible states of a game
+- Minimax alg: recursivly solve game by walking game tree;
+	- alternate btw 2 agents, Min and Max. Min does move that minimizes score, Max do move that maximizes score. 
+	- Psuedocode; 
+	```
+	min_value(state):
+		if terminal(state) return utility(state)
+		return min([max_value(result(state, action) for action in get_actions(state)])
+
+	max_value(state):
+		if terminal(state) return utility(state)
+		return max([min_value(result(state, action) for action in get_actions(state)])
+
+	minimax():
+		return max([min_value(result(state, action)) for action in get_actions(state)]
+
+	```
+- Game tree search (and regular state search) does not work for games were we cannot "solve" (enumarate all posibilities) so instead use huersitic to assign a score to the states based on how well the help the player win (states that are on the way to a win are scored higher). 
+- One possible hueristic is to build the game tree for 3 turns (3-ply) and use the utility of the leaf nodes as the hueristic - or use minimax over the 3-play tree
+
+- Another aprouch is to exploiut symetry to be able to expand the game tree more
+
+- Alpha-Beta Pruning: search more of the gaem tree by skipping parts of the tree we dont need to search 
+	- Track 2 variables: 
+		- alpha: the highest score max node in the game tree so far
+		- beta: the lowest score min node in the game tree so far
+	- move ordering matters
+
+- Non Determanistic games: use game tree to model chance using chance nodes that represent all outcomes of the turn 
+	- Expectimax: use expected value of hueristic score (utility) to make decision: prob1 * huersitic1 + prob2 * hueristic2 ...
+- What about video games: 
+	- dont use game theory, instead use FSM, Decision Trees (ML), A* search and hierachcichal task network (planning systems) and scripting (not AI) 
+
+- Game Theory: interactions btw players (more expansive than that we think of as games) 
+	- Strategy: an action that one player always takes 
+	- we assume players cannot communicate 
+- Normal Form: (punnet square) matrix where rows/cols are players moves (strategies) and the cells are the payoff (utility) when each player does that strategy
+- Nash equalibrium: point where neither player can improve their payoff by switching strategies
+- Succesive Eliminiation of Dominated Strategies (SEDS): 
+	- a dominated strategy is one where it will never be better than another strategy for both players
+	- Example: let player1 have strategies A,B,C and player 2 have strategies X,Y,Z: 
+		- if f(C,i) > f(j,i) for all i,j than C is strictly dominant (j = {A, B} , i = {X, Y, Z}, payoff = f(stategy for player 1, strategy for player 2))
+		- if f(C, i) > f(j, i) for at least one i,j and f(C,i) >= f(j,i) for all other i,j then C is weakly dominant
+		- Alg: 
+			- for player 1 - find the dominated strategy and remove it, then repeat with player 2. repeat until solution is found or fail
+		- doesnt always work. since order or elimination matters
+
+- Mixed-Strategy Equilibrium: 
+	- 1) zero-sum game: the payoffs to each player sum to zero (one players gain is another loss)
+	- 2) no pure strategy equilibrium: cant play same strategy each turn 
+	- a mixed-strategy is one where u make a certain move with a certain probability
+		- for example: in rock-paper-scissors a mixed strategy could be to play rock, paper or scissors with equal probability (1/3,1/3,1/3) 
+	- 
 
 
 
