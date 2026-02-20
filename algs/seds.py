@@ -90,7 +90,7 @@ def search(game: List[List[Tuple[int, int]]], weak: bool = False) -> List[Tuple[
     while frontier:
         strategies = frontier.pop(0)
 
-        print(depth, strategies, file=sys.stderr)
+        print(depth, strategies)
         visited.add(strategies)
 
         depth += 1
@@ -138,3 +138,14 @@ print()
 eql = search(game3, True)
 print()
 print(eql)
+
+prisoners_dilemma = [
+ [( -5, -5), (-1,-10)],
+ [(-10, -1), (-2, -2)]]
+
+print()
+eql = search(prisoners_dilemma, True)
+print()
+print(eql)
+
+
