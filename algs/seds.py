@@ -18,29 +18,28 @@ def is_dominated(payoffs_c: List[int], payoffs_j: List[int], weak: bool) -> bool
     return is_strongly_dominated(payoffs_c, payoffs_j)
 
 
-def get_payoffs( game: List[List[Tuple[int, int]]], player: int, strategy: int, valid_rows: Tuple[int, ...], valid_cols: Tuple[int, ...],) -> List[int]:
+def get_payoffs( game: List[List[Tuple[int, int]]], player: int, strategy: int, indices: Tuple[int, ...],) -> List[int]:
     payoffs = []
     if player == 0:
-        payoffs = [game[strategy][c][player] for c in valid_cols]
+        payoffs = [game[strategy][c][player] for c in indices]
 
     elif player == 1:
-        payoffs = [game[r][strategy][player] for r in valid_rows]
+        payoffs = [game[r][strategy][player] for r in indices]
 
     return payoffs
 
 
-def eliminate_dominated( game: List[List[Tuple[int, int]]], player: int, valid_rows: Tuple[int, ...], valid_cols: Tuple[int, ...], weak: bool,) -> Tuple[int, ...]:
-    indices = valid_rows if player == 0 else valid_cols
+def eliminate_dominated( game: List[List[Tuple[int, int]]], player: int, indices: Tuple[int, ...], weak: bool,) -> Tuple[int, ...]:
     dominated_stratagies = set()
 
     for c in indices:
-        payoffs_c = get_payoffs(game, player, c, valid_rows, valid_cols)
+        payoffs_c = get_payoffs(game, player, c, indices)
 
         for j in indices:
             if j == c:
                 continue
 
-            payoffs_j = get_payoffs(game, player, j, valid_rows, valid_cols)
+            payoffs_j = get_payoffs(game, player, j,indices)
 
             if is_dominated(payoffs_c, payoffs_j, weak):
                 # remove c from children and return
@@ -55,16 +54,16 @@ def eliminate_dominated( game: List[List[Tuple[int, int]]], player: int, valid_r
     return tuple(new_indices)
 
 
-def succesors( game: List[List[Tuple[int, int]]], strategies: Tuple[Tuple[int, ...], Tuple[int, ...]], weak: bool,) -> List[ Tuple[Tuple[int, ...], Tuple[int, ...]] ]:  # return stategies to be searched after removal of dominated stategies
+def succesors( game: List[List[Tuple[int, int]]], strategies: Tuple[Tuple[int, ...], Tuple[int, ...]], weak: bool) -> List[ Tuple[Tuple[int, ...], Tuple[int, ...]] ]:  # return stategies to be searched after removal of dominated stategies
     valid_rows = strategies[0]
     valid_cols = strategies[1]
 
     succesor_strategies = []
 
-    new_rows = eliminate_dominated(game, 0, valid_rows, valid_cols, weak)
+    new_rows = eliminate_dominated(game, 0, valid_rows, weak)
     succesor_strategies.append((new_rows, valid_cols))
 
-    new_cols = eliminate_dominated(game, 1, valid_rows, valid_cols, weak)
+    new_cols = eliminate_dominated(game, 1, valid_cols, weak)
     succesor_strategies.append((valid_rows, new_cols))
     return succesor_strategies
 
