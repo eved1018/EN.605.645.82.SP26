@@ -1,0 +1,6 @@
+[lint]
+select = ["PLR0915"]
+
+[lint.pylint]
+max-statements = 20
+
