@@ -57,6 +57,7 @@ def get_dominated(
                 continue
             payoffs_j = get_payoffs(game, player, j, oppenent_indices)
             if is_dominated(payoffs_c, payoffs_j, weak):
+                print(player,c, j,  payoffs_c, payoffs_j)
                 dominated_stratagies.add(c)
                 break
 
@@ -91,12 +92,6 @@ def succesors(
     return succesor_strategies
 
 
-# def is_goal_state(strategies: Tuple[Tuple[int, ...], Tuple[int, ...]]) -> bool:
-#     # is there only one solution for a player left
-#     return len(strategies[0]) == 1 and len(strategies[1]) == 1
-#
-
-
 def search(
     game: List[List[Tuple[int, int]]], weak: bool = False
 ) -> List[Tuple[int, int]]:  # BFS over all possible elminiations
@@ -115,7 +110,7 @@ def search(
     while frontier:
         strategies = frontier.pop()
 
-        print(depth, strategies)
+        print(f"Depth {depth} | stratagies {strategies}")
         visited.add(strategies)
 
         depth += 1
@@ -143,35 +138,35 @@ game1 = [
 ]
 
 
-eql = search(game1)
+eql = search(game1, False)
 print()
 print("game 1:  ", eql)
 # assert eql == [(1, 1)]
 
-
-game2 = [[(3, 0), (2, 1), (0, 0)], [(1, 1), (1, 1), (5, 0)], [(0, 1), (4, 2), (0, 1)]]
-print()
-eql = search(game2)
-print()
-print("game 2: ", eql)
-
-
-game3 = [
-    [(1, 0), (3, 1), (1, 1)],
-    [(1, 1), (3, 0), (0, 1)],
-    [(2, 2), (3, 3), (0, 2)],
-]
-
-print()
-eql = search(game3, True)
-print()
-print("game3: ", eql)
-# assert eql == [(0, 1), (0, 2)]
-
-game4 = [[(-5, -5), (-1, -10)], [(-10, -1), (-2, -2)]]
-
-print()
-eql = search(game4, True)
-print()
-print("game 4: ", eql)
+#
+# game2 = [[(3, 0), (2, 1), (0, 0)], [(1, 1), (1, 1), (5, 0)], [(0, 1), (4, 2), (0, 1)]]
+# print()
+# eql = search(game2)
+# print()
+# print("game 2: ", eql)
+#
+#
+# game3 = [
+#     [(1, 0), (3, 1), (1, 1)],
+#     [(1, 1), (3, 0), (0, 1)],
+#     [(2, 2), (3, 3), (0, 2)],
+# ]
+#
+# print()
+# eql = search(game3, True)
+# print()
+# print("game3: ", eql)
+# # assert eql == [(0, 1), (0, 2)]
+#
+# game4 = [[(-5, -5), (-1, -10)], [(-10, -1), (-2, -2)]]
+#
+# print()
+# eql = search(game4, True)
+# print()
+# print("game 4: ", eql)
 # assert eql == [(0, 0)]
