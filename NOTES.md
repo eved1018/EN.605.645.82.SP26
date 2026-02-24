@@ -4,60 +4,60 @@
 - conda activate en605645
 
 ### Orientation:
-- Modules start monday morning
-- Self Check and Programing Assignment each week
+- Modules start Monday morning
+- Self Check and Programming Assignment each week
 - Lectures followed by quiz, take notes
-- Do readings (do not need to read as if being quized on it), look at book examples. 
-- Thursday night self-check due - goal is to prime for programing assignment
+- Do readings (do not need to read as if being quizzed on it), look at book examples. 
+- Thursday night self-check due - goal is to prime for programming assignment
 - Thursday night office hours (8:00) 
 - Friday/Saturday: 2 Peer reviews of other student self-checks
-- Programing assignment and quiz are do Sunday night 
+- programming assignment and quiz are do Sunday night 
 - Do quiz earlier (wed/thur)
-- Quizes include material from ealrier lectures
+- Quizzes include material from earlier lectures
 - Functions should not be more than 20 executable lines 
 - Dont need unit tests for A* (but write why? - since its being tested below)
-- make sure it runs in enviroment
-- extended peer review until noon sunday
+- make sure it runs in environment
+- extended peer review until noon Sunday
 
 
 # Module 1: Background history of AI
 - Types of AI:
-	- System AI: Focus on agents that perceive and act in an enviroment. Reasoning, Decision Making
-	- Internet AI: ML model embedded in a larger system to do a specific task on structered input, produce structured output (spam filter, recommdation engine, spam filter)
+	- System AI: Focus on agents that perceive and act in an environment. Reasoning, Decision Making
+	- Internet AI: ML model embedded in a larger system to do a specific task on structured input, produce structured output (spam filter, recommendation engine, spam filter)
 
 - 2x2 Matrix of What is Systems AI? (4 views)
 	- 1) thinks like humans | 2) act like humans: Imitate human behavior
-	- 3) think rationally | 4) act rationally: Maxamize performance or metric
-	- Tradeoffs!
+	- 3) think rationally | 4) act rationally: Maximize performance or metric
+	- Trade-offs!
 	- R&N use (4) as "standard model of ai"
 - Agents: 
 	- perception -> action 
 
-- Standard Model of AI: Rational agents chooses the action that maximizes expected performance. Uses infomation (beliefs), objectives (utility/metric) and actions (policies). Handle uncertainty and trade-offs
+- Standard Model of AI: Rational agents chooses the action that maximizes expected performance. Uses information (beliefs), objectives (utility/metric) and actions (policies). Handle uncertainty and trade-offs
 
 - Refinements to Standard Model: 
-	- Bounded Rationality: Approxamation of rationality 
-	- Uncertain human objectives: fully known objectives are unrealistic so systems should benifit humans while being uncertain about true objectives.
+	- Bounded Rationality: Approximation of rationality 
+	- Uncertain human objectives: fully known objectives are unrealistic so systems should benefit humans while being uncertain about true objectives.
 
-- Philisophical roots of AI: 
-	- reasoning as symbol manipulation, symbols = internal represnetions of things. 
+- Philosophical roots of AI: 
+	- reasoning as symbol manipulation, symbols = internal representations of things. 
 
-- Mathmatical Foundation: 
-	- logic, probability and compution
-	- Bridges logic and compution
+- Mathematical Foundation: 
+	- logic, probability and computation
+	- Bridges logic and computation
 
 - Inspiration from biology/neuroscience and psychology: 
 	- more of a metaphor, not actually exact.
 
-- Linguistics: formal structure, NLP, language as infomation proccessing. (LLMs)
+- Linguistics: formal structure, NLP, language as Information processing. (LLMs)
 
 - Control Theory: 
 	- predates AI, study of optimal actions
 
 
 - History of AI: 
-	- Cycle of hype, disapoitnment, renewed advances. 
-	- Symbolic -> knowledge-based  | Probabalistic -> ML and data | Deep learning resurgance (LLMs)
+	- Cycle of hype, disappointment, renewed advances. 
+	- Symbolic -> knowledge-based  | Probabilistic -> ML and data | Deep learning resurgence (LLMs)
 
 - Ethics: 
 	- No doctrine or guardrails for protecting ethics of developer (unlike doctor) 
@@ -71,58 +71,58 @@
 
 
 ## Agents: 
-- An agent perceives (percepts) and act in an an enviroment via actuators. 
+- An agent perceives (percepts) and act in an environment via actuators. 
 - think of a robot 
-- Agents Functions map percept to actions, can be determintic or stochastic (same or diff response to same percept). Abstract definitions diff from impl
-- Permfomance Measure: qiuantify successs (what is rational action in env)
+- Agents Functions map percept to actions, can be deterministic or stochastic (same or diff response to same percept). Abstract definitions diff from impl
+- Performance Measure: quantify success (what is rational action in env)
 - Agent: chooses function to get maximum performance. 
-- PEAS - Task Enviroment: 
-	- Permfomance Measure: Metric
-	- Enviroment: What/Where
+- PEAS - Task Environment: 
+	- Performance Measure: Metric
+	- Environment: What/Where
 	- Actuators: Output
 	- Sensors: Input
 
-- Env vary in multple ways: 
+- Env vary in multiple ways: 
 	- Observable: can see full system state
-	- Episodic vs sequential: do percetps and actions feedback into eachother (sequential) or is a the agent used for a single episode of percept->action
+	- Episodic vs sequential: do percepts and actions feedback into each other (sequential) or is the agent used for a single episode of percept->action
 - Types of Agents: 
-	- Simple reflex agent: responds directly to percept, no internal state, works in fully observable and simple env. (also episodic). Based on condiont action rules
+	- Simple reflex agent: responds directly to percept, no internal state, works in fully observable and simple env. (also episodic). Based on condition action rules
 	- Model Based Agent: has state to track unobserved aspects. Uses model of env to inform decisions.
-	- Goal Based Agents: acts to achieve explicitly defined goal. Sequential. MOre flexible. 
-	- Utility Based Agents: maxamizes expected utility. Handles trade-offs
-	- Learning Agents: improve performance over time. Many components. Usefull in changing or unknown env. 
+	- Goal Based Agents: acts to achieve explicitly defined goal. Sequential. More flexible. 
+	- Utility Based Agents: maximizes expected utility. Handles trade-offs
+	- Learning Agents: improve performance over time. Many components. Useful in changing or unknown env. 
 	- ML is not learning agents since ML is trained before hand not "on the job"
-	- Generative AI expands traidtional concepts (not in these types)
+	- Generative AI expands traditional concepts (not in these types)
 
 ## Ethics
 - Weak vs Strong AI: 
 	- Weak: machines can only ever simulate intelligent behavior, functionally useful 
 	- Strong AI: AI can have conciousness, understanding and intentionality
 
-- Turing reframed this question in terms of behavior: can someone distinguesh btw human and machine
+- Turing reframed this question in terms of behavior: can someone distinguish btw human and machine
 - LLMs (informally) passed turing test. 
 - Consciousness is still a mystery in people (therefore also ai)
-- Ethics: resposibilty to reduce harm. Profesional codes, norms. Need proactive saftey.
+- Ethics: responsibility to reduce harm. Professional codes, norms. Need proactive safety.
 - Fairness: does everyone equal access to AI tools. Does AI fairly represent everybody.
 
 ## Algorithms
 - When to use AI?
-	- When a graph algorthim wont work 
-	- when patterns must be learnt or infered
+	- When a graph algorithm wont work 
+	- when patterns must be learnt or inferred
 	- clarify missing relationships
 	- NLP 
 	- Manage preferences
 	- Learning 
-	- adapt to dynmaic constraints
+	- adapt to dynamic constraints
 	- "Fuzzy"
 	- System!
 
-- Common classic algorthims w AI flavor (gray area): Union-find, DFS, binary Search, Tarjas algorithim, Longest common subseq, Dijkstras, Bellman-Ford, Suffix-trees, LP
+- Common classic algorithms w AI flavor (gray area): Union-find, DFS, binary Search, Tarjas Algorithm, Longest common subseq, Dijkstras, Bellman-Ford, Suffix-trees, LP
 - Dynamic Programming is AI
 
 
 - Which AI to use?
-	- Symbolic AI: reason through rules, constraintd or search in a structered env
+	- Symbolic AI: reason through rules, constraints or search in a structured env
 	- Discriminative ML: Predict outcome
 	- Generative ML: transform data from type A to type B
 
@@ -130,13 +130,13 @@
 
 # Module 2: State Space Search
 
-- general approuch to problem solving: turn problem into graph and then form the solution as a path through the graph
+- general approach to problem solving: turn problem into graph and then form the solution as a path through the graph
 
 - 4 key elements: States, Actions, Transitions, and Cost. [SATC]
 	- States are the way of representing the problem space (set of values)
 		- Initial state S~0~ -> starting configuration of problem 
-		- Goal state S~g~ -> succesful termination state
-		- Failure state S~f~ -> non succesful termination state
+		- Goal state S~g~ -> successful termination state
+		- Failure state S~f~ -> non successful termination state
 	- Actions (a): set of things an agent can do to change the state
 	- Transitions (T(s,a)): rules for moving between states based on current state and action taken 
 	- Cost c(s,a,a`): associated cost of action 
@@ -373,7 +373,7 @@ Review:
 	- evolution programming: finitie state machine
 
 
-# Module 5: Adviserial Search 
+# Module 5: Adversarial Search 
 
 - Games: special form of state space search using payoffs 
 	- states: game/board, pieces, cards
@@ -406,7 +406,7 @@ Review:
 
 - Another aprouch is to exploiut symetry to be able to expand the game tree more
 
-- Alpha-Beta Pruning: search more of the gaem tree by skipping parts of the tree we dont need to search 
+- Alpha-Beta Pruning: search more of the game tree by skipping parts of the tree we dont need to search 
 	- Track 2 variables: 
 		- alpha: the highest score max node in the game tree so far
 		- beta: the lowest score min node in the game tree so far
@@ -438,8 +438,39 @@ Review:
 		- for example: in rock-paper-scissors a mixed strategy could be to play rock, paper or scissors with equal probability (1/3,1/3,1/3) 
 	- 
 
+# Module 6: CSP - constraint satisfaction problems: 
+- specalized state-space search 
+- Define: 
+	- X: variables - Rows in the matrix
+	- D: domains - possible values of the variables? 2 should share the domain
+	- C: constraints -
+	- Assignment - setting values to some or all variables
+	- Consistant Assignment - an assignment that satifies the constraints 
+	- Complete Assignment - assignmet to all variables
+	- Solution is is a complete + Consistant assignmnet
+- DFS gives us backtracking - when we hit an inconsistant assignment we can go back 
+- Forward checking - after making an assignment, delete that option (domain) and all options that it makes inconsistant for all other variables 
+- BT + FC -> backtracking + forward checking - best way to do this search
+- In order to do this we need to be able to reconstruct the domains when backtracking (dict)
 
+- Re-frame constraints as graph:
+	- variable are nodes, constraints are edges (arcs)
+	- all the constraints need to be formulated as binary constraints (btw 2 nodes) 
+	- a node is arc consistnant if all the values in its domain do not violate its constraints 
+	- we then make a node consistnant by removing values that make it inconsistent (same as forward checking)
+	- AC3: algorithm that checks all arcs itertively 
 
+- Improvements to Forward checking: 
+	- Better way to pick variables to assign to first?
+		- Minimum Remaining Values: pick variable with smallest domain (fewest options) first - break ties randomly 
+		- Degree Huersitic: pick the variable with the most constraints
 
+	- What value should we give to a variable?
+		- Least Constraining Value: pick value that rules out the fewwest values in the nodes it shares contraints with
+
+- Improvements to Backtracking: 
+	- the last assignment might not be the issue - we should have stopped somewhere earlier in the search 
+	- solution: keep track of which assignmnets deleted which value from a variables domain 
+    - 
 
 
