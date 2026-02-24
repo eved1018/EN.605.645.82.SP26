@@ -466,11 +466,17 @@ Review:
 		- Degree Huersitic: pick the variable with the most constraints
 
 	- What value should we give to a variable?
-		- Least Constraining Value: pick value that rules out the fewwest values in the nodes it shares contraints with
+		- Least Constraining Value: pick value that rules out the fewest values in the nodes it shares contraints with
 
 - Improvements to Backtracking: 
-	- the last assignment might not be the issue - we should have stopped somewhere earlier in the search 
-	- solution: keep track of which assignmnets deleted which value from a variables domain 
-    - 
+    - Conflict Directed Backjumping: 
+        - the last assignment might not be the issue - we should have stopped somewhere earlier in the search 
+        - solution: keep track of which assignmnets deleted which value from a variables domain 
+        - then if we run out of values from a variable, we can jump 9direct-backtrack) to the assignment that removed the variables last value.
+
+- Examples of  CSP:
+    - soduku, map coloring, scheduling, 
+    - diff types of constraints: global (applies to all all assignments), all-diff (all variables must be diff), resource (limited resource), precedence(order of assignment matter), disjunctive (2 things cant happen at the same time), 
+    - Related to declrative programming - say what to do not how 
 
 
