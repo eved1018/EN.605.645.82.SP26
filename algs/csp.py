@@ -1,39 +1,63 @@
 from typing import List, Set, Dict, Callable, Tuple
 from math import inf
-from copy import deepcopy
 
 
 """
+CSP - Map Coloring:
+
 Nodes: Ordered List of Strings - each represents a variable
 Edges: List of Tuples - each tuple is index in nodes for 2 adjacent nodes
 """
 
-
 def get_value_by_order(color_list):
-    return sorted(color_list)[0]
+    return sorted(color_list)
 
 
-def minimum_remaining_value(csp, assignments, color_list):  # pick var with least domain!
+def minimum_remaining_value(csp, assignments, color_list, trace: bool = False):  # pick var with least domain!
     n_colors = len(color_list)
 
     fewest_node = None
     fewest_node_index = -1
-    fewest_domain = n_colors + 1
+    fewest_domain = inf
 
     for index, node in enumerate(csp["nodes"]):
+        if node in assignments:
+            continue
         domain = color_list.copy()
         for neighbor_index in get_neighbors(csp, index):
             neighbor = csp["nodes"][neighbor_index]
-            if neighbor in assignments:
+
+            if neighbor in assignments and assignments[neighbor] in domain:
                 domain.remove(assignments[neighbor])
+
         if len(domain) < fewest_domain:
             fewest_node = node
             fewest_domain = len(domain)
             fewest_node_index = index
+    if trace:
+        print(f"[Variable] Selected node {fewest_node} has smallest domain {fewest_domain}")
 
     return fewest_node, fewest_node_index
 
-def contraint_value_overlaps(csp, variable_index, color):
+def degree_heuristic(csp, assignment, color_list, trace: bool = False):
+    best_node = None
+    best_node_index = -1
+    most_constraints = 0
+    for index, node in enumerate(csp["nodes"]):
+        if node in assignment:
+            continue
+        n_edges = len(get_neighbors(csp, index))
+        if n_edges > most_constraints:
+            best_node = node
+            most_constraints = n_edges
+            best_node_index = index
+
+    if trace:
+        print(f"[Variable] Selected node {best_node} has most constraints ({most_constraints})")
+
+    return best_node, best_node_index
+
+def constraint_value_overlaps(csp, variable_index, color):
     overlapping = 0
     for neighbor in get_neighbors(csp, variable_index):
         if color in csp["colors"][neighbor]:
@@ -42,7 +66,7 @@ def contraint_value_overlaps(csp, variable_index, color):
 
 
 def least_constraining_value(csp, variable_index, assignments, color_list):  # pick val
-    return sorted(color_list, key = lambda x: contraint_value_overlaps(csp, variable_index, x))
+    return sorted(color_list, key=lambda x: constraint_value_overlaps(csp, variable_index, x))
 
 
 def get_neighbors(csp, index):
@@ -62,24 +86,10 @@ def is_complete(csp, assignments):
     return True
 
 
-def degree_heuristic(csp, assignment):
-    # degree hueristic
-    best_node = None
-    best_node_index = -1
-    best_edges = 0
-    for index, node in enumerate(csp["nodes"]):
-        if node in assignment:
-            continue
-        n_edges = len(get_neighbors(csp, index))
-        if n_edges > best_edges:
-            best_node = node
-            best_edges = n_edges
-            best_node_index = index
-
-    return best_node, best_node_index
 
 
-def is_value_consistant(csp, variable, index, value, assignments):
+
+def is_value_consistent(csp, variable, index, value, assignments):
     for neighbor_index in get_neighbors(csp, index):
         neighbor = csp["nodes"][neighbor_index]
         if neighbor in assignments and assignments[neighbor] == value:
@@ -87,7 +97,7 @@ def is_value_consistant(csp, variable, index, value, assignments):
     return True
 
 
-def forward_checking(csp: Dict, variable: str, index: int, value: str, assignments: Dict[str, str], undo_list: List[Tuple[str,List[str]]]):
+def forward_checking(csp: Dict, variable: str, index: int, value: str, assignments: Dict[str, str], undo_list: List[Tuple[str, List[str]]], trace: bool = False):
     for neighbor_index in get_neighbors(csp, index):
         neighbor = csp["nodes"][neighbor_index]
         if neighbor not in assignments:
@@ -96,8 +106,11 @@ def forward_checking(csp: Dict, variable: str, index: int, value: str, assignmen
                 undo_list.append((neighbor_index, [value]))
 
             if len(csp["colors"][neighbor_index]) == 0:  # pruned to much
+                if trace: 
+                    print(f"[Search] Backtracking detected - node {neighbor} has empty domain") 
                 return False
     return True
+
 
 def reverse_checking(csp, undo_list):  # reverse effect of forward_checking
     for index, values in undo_list:
@@ -111,6 +124,7 @@ def make_assignment(csp, variable, index, value, assignments, undo_list):
     csp["colors"][index] = [value]
     assignments[variable] = value
 
+
 def del_assignments(assignments, var, val):
     if var in assignments:
         c = assignments.pop(var)
@@ -120,27 +134,27 @@ def del_assignments(assignments, var, val):
     return True
 
 
-def color_map(planar_map, color_list: List[str], trace: bool = False):
-    planar_map["colors"] = [list(color_list) for _ in range(len(planar_map["nodes"]))]
-    return backtrack(planar_map, color_list, {})
-
-
-def backtrack(planar_map, color_list, assignments) -> List[Tuple[str, str]] | None:
+def backtrack(planar_map, color_list, assignments, get_variable: Callable, trace: bool = False) -> List[Tuple[str, str]] | None:
     if is_complete(planar_map, assignments):
-        return assignments
+        return [(k, v) for k, v in assignments.items()]
 
-    variable, variable_index = degree_heuristic(planar_map, assignments)
-    for value in least_constraining_value(planar_map, variable_index, assignments, color_list):
-        if is_value_consistant(planar_map, variable, variable_index, value, assignments):
+    variable, variable_index = get_variable(planar_map, assignments, color_list, trace)
+    values = least_constraining_value(planar_map, variable_index, assignments, planar_map["colors"][variable_index])
+    if trace: 
+        print(f"[Values] Node {variable} domain values: {' '.join(values)}") 
+    
+    for value in values:
+        if is_value_consistent(planar_map, variable, variable_index, value, assignments):
+            
+            # TODO make sure i dont need to deepcopy anything here
             undo_list = []
             make_assignment(planar_map, variable, variable_index, value, assignments, undo_list)
 
-            if forward_checking(planar_map, variable, variable_index, value, assignments, undo_list):
-                result = backtrack(planar_map, color_list, assignments)
-
+            if forward_checking(planar_map, variable, variable_index, value, assignments, undo_list, trace):
+                result = backtrack(planar_map, color_list, assignments, get_variable)
                 if result is not None:
                     return result
-
+    
             reverse_checking(planar_map, undo_list)
             if not del_assignments(assignments, variable, value):
                 raise Exception("Could not remove assignment {} -> {}".format(variable, value))
@@ -148,46 +162,34 @@ def backtrack(planar_map, color_list, assignments) -> List[Tuple[str, str]] | No
     return None
 
 
+# def color_map(planar_map, color_list: List[str], trace: bool = False):
+#     planar_map["colors"] = [list(color_list) for _ in range(len(planar_map["nodes"]))]
+#     return backtrack(planar_map, color_list, {}, minimum_remaining_value)
+#
+
+
+def color_map(planar_map, color_list: List[str], trace: bool = False):
+    planar_map["colors"] = [list(color_list) for _ in range(len(planar_map["nodes"]))]
+    return backtrack(planar_map, color_list, {}, degree_heuristic, trace)
+
 connecticut = {
-    "coordinates": [
-        (46, 52),
-        (217, 146),
-        (65, 142),
-        (147, 85),
-        (162, 140),
-        (104, 77),
-        (197, 94),
-        (123, 142),
-    ],
-    "edges": [
-        (0, 2),
-        (0, 5),
-        (2, 5),
-        (2, 7),
-        (5, 7),
-        (5, 3),
-        (7, 3),
-        (7, 4),
-        (7, 6),
-        (3, 6),
-        (4, 6),
-        (4, 1),
-        (6, 1),
-    ],
-    "nodes": [
-        "Fairfield",
-        "Windham",
-        "Litchfield",
-        "Middlesex",
-        "Tolland",
-        "New Haven",
-        "New London",
-        "Hartford",
-    ],
-}
+    'coordinates': [(46, 52), (217, 146), (65, 142), (147, 85), (162, 140),
+                 (104, 77), (197, 94), (123, 142)],
+    'edges': [(0, 2), (0, 5), (2, 5), (2, 7), (5, 7), (5, 3), (7, 3), (7, 4),
+           (7, 6), (3, 6), (4, 6), (4, 1), (6, 1)],
+    'nodes': ['Fairfield', 'Windham', 'Litchfield', 'Middlesex', 'Tolland',
+           'New Haven', 'New London', 'Hartford']}
 
-
-connecticut_colors = color_map(connecticut, ["red", "blue", "green", "yellow"])
-print()
-print("----"*20)
+connecticut_colors = color_map(connecticut, ["red", "blue", "green", "yellow"], trace=True)
 print(connecticut_colors)
+
+edges = connecticut["edges"]
+nodes = connecticut[ "nodes"]
+colors = connecticut_colors
+COLOR = 1
+
+for start, end in edges:
+    try:
+        assert colors[start][COLOR] != colors[end][COLOR]
+    except AssertionError:
+        print(f"{nodes[start]} and {nodes[end]} are adjacent but have the same color.")
