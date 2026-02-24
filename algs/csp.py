@@ -8,17 +8,12 @@ CSP - Map Coloring:
 Nodes: Ordered List of Strings - each represents a variable
 Edges: List of Tuples - each tuple is index in nodes for 2 adjacent nodes
 """
-
-def get_value_by_order(color_list):
-    return sorted(color_list)
-
-
 def minimum_remaining_value(csp, assignments, color_list, trace: bool = False):  # pick var with least domain!
     n_colors = len(color_list)
 
     fewest_node = None
     fewest_node_index = -1
-    fewest_domain = inf
+    fewest_domain = n_colors + 1
 
     for index, node in enumerate(csp["nodes"]):
         if node in assignments:
@@ -35,9 +30,10 @@ def minimum_remaining_value(csp, assignments, color_list, trace: bool = False): 
             fewest_domain = len(domain)
             fewest_node_index = index
     if trace:
-        print(f"[Variable] Selected node {fewest_node} has smallest domain {fewest_domain}")
+        print(f"Selected node {fewest_node} has smallest domain size ({fewest_domain}) and ", end="")
 
     return fewest_node, fewest_node_index
+
 
 def degree_heuristic(csp, assignment, color_list, trace: bool = False):
     best_node = None
@@ -53,9 +49,10 @@ def degree_heuristic(csp, assignment, color_list, trace: bool = False):
             best_node_index = index
 
     if trace:
-        print(f"[Variable] Selected node {best_node} has most constraints ({most_constraints})")
+        print(f"Selected node {best_node} has the most constraints ({most_constraints}) and ", end =" ")
 
     return best_node, best_node_index
+
 
 def constraint_value_overlaps(csp, variable_index, color):
     overlapping = 0
@@ -65,7 +62,7 @@ def constraint_value_overlaps(csp, variable_index, color):
     return overlapping
 
 
-def least_constraining_value(csp, variable_index, assignments, color_list):  # pick val
+def least_constraining_value(csp, variable_index, color_list):  # pick val
     return sorted(color_list, key=lambda x: constraint_value_overlaps(csp, variable_index, x))
 
 
@@ -79,17 +76,13 @@ def get_neighbors(csp, index):
     return neighbors
 
 
-def is_complete(csp, assignments):
-    # correct number of assignments
+def is_complete(csp, assignments):  # correct number of assignments
     if len(assignments) != len(csp["nodes"]):
         return False
     return True
 
 
-
-
-
-def is_value_consistent(csp, variable, index, value, assignments):
+def is_value_consistent(csp, index, value, assignments):
     for neighbor_index in get_neighbors(csp, index):
         neighbor = csp["nodes"][neighbor_index]
         if neighbor in assignments and assignments[neighbor] == value:
@@ -97,7 +90,7 @@ def is_value_consistent(csp, variable, index, value, assignments):
     return True
 
 
-def forward_checking(csp: Dict, variable: str, index: int, value: str, assignments: Dict[str, str], undo_list: List[Tuple[str, List[str]]], trace: bool = False):
+def forward_checking(csp: Dict, index: int, value: str, assignments: Dict[str, str], undo_list: List[Tuple[str, List[str]]], trace: bool = False):
     for neighbor_index in get_neighbors(csp, index):
         neighbor = csp["nodes"][neighbor_index]
         if neighbor not in assignments:
@@ -106,13 +99,13 @@ def forward_checking(csp: Dict, variable: str, index: int, value: str, assignmen
                 undo_list.append((neighbor_index, [value]))
 
             if len(csp["colors"][neighbor_index]) == 0:  # pruned to much
-                if trace: 
-                    print(f"[Search] Backtracking detected - node {neighbor} has empty domain") 
+                if trace:
+                    print(f"Backtracking detected - node {neighbor} has empty domain")
                 return False
     return True
 
 
-def reverse_checking(csp, undo_list):  # reverse effect of forward_checking
+def undo_forward_checking(csp, undo_list):  # reverse effect of forward_checking
     for index, values in undo_list:
         for value in values:
             if value not in csp["colors"][index]:
@@ -136,28 +129,29 @@ def del_assignments(assignments, var, val):
 
 def backtrack(planar_map, color_list, assignments, get_variable: Callable, trace: bool = False) -> List[Tuple[str, str]] | None:
     if is_complete(planar_map, assignments):
-        return [(k, v) for k, v in assignments.items()]
+        return [(node, assignments[node]) for node in planar_map["nodes"]]
 
     variable, variable_index = get_variable(planar_map, assignments, color_list, trace)
-    values = least_constraining_value(planar_map, variable_index, assignments, planar_map["colors"][variable_index])
-    if trace: 
-        print(f"[Values] Node {variable} domain values: {' '.join(values)}") 
-    
+    domain = planar_map["colors"][variable_index]
+    values = least_constraining_value(planar_map, variable_index, domain)
+    if trace:
+        print(f"domain values: {' '.join(values)}")
+
     for value in values:
-        if is_value_consistent(planar_map, variable, variable_index, value, assignments):
-            
+        if is_value_consistent(planar_map, variable_index, value, assignments):
             # TODO make sure i dont need to deepcopy anything here
             undo_list = []
             make_assignment(planar_map, variable, variable_index, value, assignments, undo_list)
 
-            if forward_checking(planar_map, variable, variable_index, value, assignments, undo_list, trace):
-                result = backtrack(planar_map, color_list, assignments, get_variable)
+            if forward_checking(planar_map, variable_index, value, assignments, undo_list, trace):
+                result = backtrack(planar_map, color_list, assignments, get_variable, trace)
                 if result is not None:
                     return result
-    
-            reverse_checking(planar_map, undo_list)
+
+            undo_forward_checking(planar_map, undo_list)
             if not del_assignments(assignments, variable, value):
                 raise Exception("Could not remove assignment {} -> {}".format(variable, value))
+
 
     return None
 
