@@ -87,30 +87,27 @@ def is_value_consistant(csp, variable, index, value, assignments):
     return True
 
 
-def forward_checking(csp: Dict, variable: str, index: int, value: str, assignments: Dict[str, str], removed: Dict[str, List[str]]):
+def forward_checking(csp: Dict, variable: str, index: int, value: str, assignments: Dict[str, str], undo_list: List[Tuple[str,List[str]]]):
     for neighbor_index in get_neighbors(csp, index):
         neighbor = csp["nodes"][neighbor_index]
         if neighbor not in assignments:
             if value in csp["colors"][neighbor_index]:
                 csp["colors"][neighbor_index].remove(value)
-                if neighbor_index not in removed:
-                    removed[neighbor_index] = [value]
-                else:
-                    removed[neighbor_index].append(value)
+                undo_list.append((neighbor_index, [value]))
 
             if len(csp["colors"][neighbor_index]) == 0:  # pruned to much
                 return False
     return True
 
-def reverse_checking(csp, removed):  # reverse effect of forward_checking
-    for index, values in removed.items():
+def reverse_checking(csp, undo_list):  # reverse effect of forward_checking
+    for index, values in undo_list:
         for value in values:
             if value not in csp["colors"][index]:
                 csp["colors"][index].append(value)
 
 
-def make_assignment(csp, variable, index, value, assignments, removed):
-    removed[index] = [c for c in csp["colors"][index] if c != value]
+def make_assignment(csp, variable, index, value, assignments, undo_list):
+    undo_list.append((index, [c for c in csp["colors"][index] if c != value]))
     csp["colors"][index] = [value]
     assignments[variable] = value
 
@@ -135,16 +132,16 @@ def backtrack(planar_map, color_list, assignments) -> List[Tuple[str, str]] | No
     variable, variable_index = degree_heuristic(planar_map, assignments)
     for value in least_constraining_value(planar_map, variable_index, assignments, color_list):
         if is_value_consistant(planar_map, variable, variable_index, value, assignments):
-            removed = {}
-            make_assignment(planar_map, variable, variable_index, value, assignments, removed)
+            undo_list = []
+            make_assignment(planar_map, variable, variable_index, value, assignments, undo_list)
 
-            if forward_checking(planar_map, variable, variable_index, value, assignments, removed):
+            if forward_checking(planar_map, variable, variable_index, value, assignments, undo_list):
                 result = backtrack(planar_map, color_list, assignments)
 
                 if result is not None:
                     return result
 
-            reverse_checking(planar_map, removed)
+            reverse_checking(planar_map, undo_list)
             if not del_assignments(assignments, variable, value):
                 raise Exception("Could not remove assignment {} -> {}".format(variable, value))
 
