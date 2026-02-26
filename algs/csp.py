@@ -8,30 +8,27 @@ CSP - Map Coloring:
 Nodes: Ordered List of Strings - each represents a variable
 Edges: List of Tuples - each tuple is index in nodes for 2 adjacent nodes
 """
+
+
 def minimum_remaining_value(csp, assignments, color_list, trace: bool = False):  # pick var with least domain!
     n_colors = len(color_list)
-
     fewest_node = None
     fewest_node_index = -1
     fewest_domain = n_colors + 1
-
     for index, node in enumerate(csp["nodes"]):
         if node in assignments:
             continue
         domain = color_list.copy()
         for neighbor_index in get_neighbors(csp, index):
             neighbor = csp["nodes"][neighbor_index]
-
             if neighbor in assignments and assignments[neighbor] in domain:
                 domain.remove(assignments[neighbor])
-
         if len(domain) < fewest_domain:
             fewest_node = node
             fewest_domain = len(domain)
             fewest_node_index = index
     if trace:
         print(f"Selected node {fewest_node} has smallest domain size ({fewest_domain}) and ", end="")
-
     return fewest_node, fewest_node_index
 
 
@@ -49,7 +46,7 @@ def degree_heuristic(csp, assignment, color_list, trace: bool = False):
             best_node_index = index
 
     if trace:
-        print(f"Selected node {best_node} has the most constraints ({most_constraints}) and ", end =" ")
+        print(f"Selected node {best_node} has the most constraints ({most_constraints}) and ", end=" ")
 
     return best_node, best_node_index
 
@@ -127,7 +124,7 @@ def del_assignments(assignments, var, val):
     return True
 
 
-def backtrack(planar_map, color_list, assignments, get_variable: Callable, trace: bool = False) -> List[Tuple[str, str]] | None:
+def backtrack(planar_map, color_list, assignments, get_variable, trace) -> List[Tuple[str, str]] | None:
     if is_complete(planar_map, assignments):
         return [(node, assignments[node]) for node in planar_map["nodes"]]
 
@@ -139,7 +136,6 @@ def backtrack(planar_map, color_list, assignments, get_variable: Callable, trace
 
     for value in values:
         if is_value_consistent(planar_map, variable_index, value, assignments):
-            # TODO make sure i dont need to deepcopy anything here
             undo_list = []
             make_assignment(planar_map, variable, variable_index, value, assignments, undo_list)
 
@@ -151,7 +147,6 @@ def backtrack(planar_map, color_list, assignments, get_variable: Callable, trace
             undo_forward_checking(planar_map, undo_list)
             if not del_assignments(assignments, variable, value):
                 raise Exception("Could not remove assignment {} -> {}".format(variable, value))
-
 
     return None
 
@@ -166,19 +161,18 @@ def color_map(planar_map, color_list: List[str], trace: bool = False):
     planar_map["colors"] = [list(color_list) for _ in range(len(planar_map["nodes"]))]
     return backtrack(planar_map, color_list, {}, degree_heuristic, trace)
 
+
 connecticut = {
-    'coordinates': [(46, 52), (217, 146), (65, 142), (147, 85), (162, 140),
-                 (104, 77), (197, 94), (123, 142)],
-    'edges': [(0, 2), (0, 5), (2, 5), (2, 7), (5, 7), (5, 3), (7, 3), (7, 4),
-           (7, 6), (3, 6), (4, 6), (4, 1), (6, 1)],
-    'nodes': ['Fairfield', 'Windham', 'Litchfield', 'Middlesex', 'Tolland',
-           'New Haven', 'New London', 'Hartford']}
+    "coordinates": [(46, 52), (217, 146), (65, 142), (147, 85), (162, 140), (104, 77), (197, 94), (123, 142)],
+    "edges": [(0, 2), (0, 5), (2, 5), (2, 7), (5, 7), (5, 3), (7, 3), (7, 4), (7, 6), (3, 6), (4, 6), (4, 1), (6, 1)],
+    "nodes": ["Fairfield", "Windham", "Litchfield", "Middlesex", "Tolland", "New Haven", "New London", "Hartford"],
+}
 
 connecticut_colors = color_map(connecticut, ["red", "blue", "green", "yellow"], trace=True)
 print(connecticut_colors)
 
 edges = connecticut["edges"]
-nodes = connecticut[ "nodes"]
+nodes = connecticut["nodes"]
 colors = connecticut_colors
 COLOR = 1
 
