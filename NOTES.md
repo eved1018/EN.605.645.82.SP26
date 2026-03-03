@@ -477,6 +477,69 @@ Review:
 - Examples of  CSP:
     - soduku, map coloring, scheduling, 
     - diff types of constraints: global (applies to all all assignments), all-diff (all variables must be diff), resource (limited resource), precedence(order of assignment matter), disjunctive (2 things cant happen at the same time), 
-    - Related to declrative programming - say what to do not how 
+    - Related to declarative programming - say what to do not how 
+
+
+# Module 7: Logic
+- Propositional logic: T and F are constants. A prop symbol is a sentence
+- if P is a sentence and Q is a sentence then the following are sentences: ie syntax
+    - (P): parenthesis
+    - ~P: not 
+    - P v Q:  inclusive or 
+    - Extra: 
+        - P ^ Q: and
+        - P => Q: implies
+        - P <=> Q equivalence
+        
+- semantics: what the logical symbols mean: (solve for P)
+- a model of the world is an assignment of T/F to symbols of a sentence
+- satisfiable: at least one symbol can be assigned T
+- valid: T for all symbols
+- UN satisfiable: no symbols can be assigned T
+- modus ponens: P => Q and P is T then Q is T. 
+- Model tolens: P=> Q and ~Q then ~P (if Q is F then P is false). 
+
+
+- First Order Logic: easier to work with
+    - we add:
+        - constants:  primitives, 
+        - functions:  properties 
+        - predicates: check for T/F
+        - variables
+        - connectives (boolean logic)
+        - quantifiers (∃, ∀)
+
+- Quantification: 
+    - ∀xp(x) - for every instantiations of x, p(x) is T. 
+    - ∃xp(x) - p(x) is true for at least one instantiation of x. 
+- Duals: 
+    - ∀xp(x) <=> ~∃x~p(x) 
+    - ∃x(px) <=> ~∀x~p(x)
+
+- Universal Elimination:  give values in quantifiers
+    - if ∀xp(x) is true then p(c) is true for any constant c in the domain 
+
+- Existential Elimination: 
+    - if ∃x(px) is True then p(c) is true for some constant c, not appearing in any other sentence. 
+
+- Forward and Backward Chaining: approach top turn logic problems into solvable state-space searches
+    - Forward Chaining:  match on the LHS of our implications to produce new facts until we get what we want to prove
+    - substitution list: [ n { x/C }, a, b, c] - sub C in for x in implication (fact) 1, and use that for implications a, b, c
+    - Backward Chaining: match rhs of implications to make new lhs (start with goal and move backward
+
+
+- Unification: assigning constants or functions to variables
+    - can be empty or Null (to show failure)
+    - standardized apart: give new variable names for each sentence 
+    - cant assign the same constant to two diff variables
+    - cant assign a function that only takes a constant 
+
+
+- Resolution: convert from FOL to CNF: 
+    - (P => Q) <=> (~P v Q)
+    -  ~(A ^ B) <=> ~A ^ ~B
+    - [x]....[x] <=> [x]....[y] i.e. rename variables that are not the same
+    - ∃xp(x) -> p(C)
+    -  
 
 
