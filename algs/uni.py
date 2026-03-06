@@ -63,58 +63,48 @@ def is_constant(exp):
     return isinstance(exp, str) and not is_variable(exp)
 
 
-def is_equal(exp1, exp2):
-    # expressions must be literally the same (identical) except if one or the other (or both) has a variable in that "spot".
-    if len(exp1) != len(exp2):
-        return False
-
-    for i, j in zip(exp1, exp2):
-        if is_variable(i) or is_variable(j):
-            continue
-        if i != j:
-            return False
-    return True
-
-
-def occurs(variable, expression):
-    return variable in expression
-
-
-def split_first(exp):
-    return exp[0], exp[1:]
-
-
 def apply(result, list_expression1, list_expression2):
-    list_expression1 = [result[i] if is_constant(i) and i in result else i for i in list_expression1]
-    list_expression2 = [result[i] if is_constant(i) and i in result else i for i in list_expression2]
+    # TODO should be recursive ?
+    list_expression1 = [result[i] if is_variable(i) and i in result else i for i in list_expression1]
+    list_expression2 = [result[i] if is_variable(i) and i in result else i for i in list_expression2]
     return list_expression1, list_expression2
 
 
-def composition(result1, result2, debug=False):
-    result = result1
-    if result2:
-        result.update(result2)
-    if debug:
-        print("result: ", result1, result2, result)
+def composition(result1: Dict, result2: Dict, trace: bool = False):
+    result = {**result1, **result2}
+    if trace:
+        print(f"New substitution List: {result1} + {result2} -> {result}")
     return result
 
 
-def deatomize(exp):
-    return "(" + " ".join(exp) + ")"
+def occurs(variable, expression):
+    if variable == expression:
+        return True
+    if isinstance(expression, list):
+        for subexpressions in expression:
+            if occurs(variable, subexpressions):
+                return True
+    return False
+
+
+def split_expressions(list_expression1, list_expression2):
+    first1, rest1 = list_expression1[0], list_expression1[1:]
+    first2, rest2 = list_expression2[0], list_expression2[1:]
+    return first1, rest1, first2, rest2
 
 
 def assign(variable, expression):
     if isinstance(expression, list):
-        expression = deatomize(expression)
+        expression = "(" + " ".join(expression) + ")"
     return {variable: expression}
 
 
-def unification(list_expression1, list_expression2, debug=False) -> None | Dict:
-    if debug:
-        print(list_expression1, list_expression2)
+def unification(list_expression1, list_expression2, trace=False) -> Dict | None:
+    if trace:
+        print(f"Unifying {list_expression1} & {list_expression2}")
 
-    if (is_constant(list_expression1) and is_constant(list_expression2)) or (len(list_expression1) == 0 or len(list_expression2) == 0):
-        if is_equal(list_expression1, list_expression2):
+    if (is_constant(list_expression1) and is_constant(list_expression2)) or (len(list_expression1) == 0 and len(list_expression2) == 0):  # add check for isinstance(x,list)
+        if list_expression1 == list_expression2:
             return {}
         return None
 
@@ -128,26 +118,20 @@ def unification(list_expression1, list_expression2, debug=False) -> None | Dict:
             return None
         return assign(list_expression2, list_expression1)
 
-    first1, rest1 = split_first(list_expression1)
-    first2, rest2 = split_first(list_expression2)
+    first1, rest1, first2, rest2 = split_expressions(list_expression1, list_expression2)
 
-    result1 = unification(first1, first2)
-
+    result1 = unification(first1, first2, trace)
     if result1 is None:
         return None
 
-    list_expression1, list_expression2 = apply(result1, list_expression1, list_expression2)
+    rest1, rest2 = apply(result1, rest1, rest2)
 
-    result2 = unification(rest1, rest2, debug)
-    if result2 is None:
+    result2 = unification(rest1, rest2, trace)
+
+    if result2 is None:  # if result2 is None or is_contradiction(result1, result2, trace):
         return None
 
-    if result1 != result2 and any(key in result1 for key in result2):  # Contradiction
-        if debug:
-            print(f"Contradiction: {result1} {result2}")
-        return None
-
-    return composition(result1, result2, debug)
+    return composition(result1, result2, trace)
 
 
 def list_check(parsed_expression):
@@ -162,22 +146,28 @@ def unify(s_expression1, s_expression2):
     return unification(list_expression1, list_expression2)
 
 
-self_check_test_cases = [
-    ["(son Barney Barney)", "(daughter Wilma Pebbles)", None],
-    ["(knowns John ?x)", "(knowns John Jane)", {"?x": "Jane"}],
-    ["(knowns John ?x)", "(knowns ?y Bill)", {"?x": "Bill", "?y": "John"}],
-    ["(knowns John ?x)", "(knowns ?y (mother ?y))", {"?y": "John", "?x": "(mother ?y)"}],
-    ["(knowns John ?x)", "(knowns Elizabeth ?x)", None],
-    ["(knowns John ?x)", "(knowns ?x Elizabeth)", None],
-    ["(son Barney Bam_Bam)", "(son ?y (son Barney))", None],
-    ["(loves Fred Fred)", "(loves ?x ?x)", {"?x": "Fred"}],
-    ["(loves George Fred)", "(loves ?y ?y)", None],
-]
+def run_tests(test_cases):
+    for i, case in enumerate(test_cases):
+        exp1, exp2, expected, message = case
+        actual = unify(exp1, exp2)
+        print(f"[{i + 1}] Testing {exp1} & {exp2} - {message}...")
+        pre = "PASS" if actual == expected else "FAIL"
+        print(f"{pre} actual = {actual} | expected = {expected}")
+        # print("\n")
+        assert expected == actual
 
-for case in self_check_test_cases:
-    exp1, exp2, expected = case
-    actual = unify(exp1, exp2)
-    print(f"actual = {actual}")
-    print(f"expected = {expected}")
-    print("\n")
-    assert expected == actual
+
+self_check_test_cases = [
+    ["(son Barney Barney)", "(daughter Wilma Pebbles)", None, "non-equal constants"],
+    ["(Fred)", "(Barney)", None, "self check case - invalid unification of non-equal constant"],
+    ["(Pebbles)", "(Pebbles)", {}, "self check case - unification of the same constant returns an empty substitution list"],
+    ["(quarry_worker Fred)", "(quarry_worker ?x)", {"?x": "Fred"}, "self check case - valid unification of single variable"],
+    ["(son Barney ?x)", "(son ?y Bam_Bam)", {"?y": "Barney", "?x": "Bam_Bam"}, "self check case - valid unification of two variables"],
+    ["(married ?x ?y)", "(married Barney Wilma)", {"?x": "Barney", "?y": "Wilma"}, "self check case - valid unification of two variable within the same expression"],
+    ["(son Barney ?x)", "(son ?y (son Barney))", {"?y": "Barney", "?x": "(son Barney)"}, "self check case - valid assignment of a variable to an expression"],
+    ["(son Barney ?x)", "(son ?y (son ?y))", {"?y": "Barney", "?x": "(son ?y)"}, "self check case - valid assignment of a variable to an expression with replacement"],
+    ["(son Barney Bam_Bam)", "(son ?y (son Barney))", None, "self check case -  invalid unification of a constant function to a constant"],
+    ["(loves Fred Fred)", "(loves ?x ?x)", {"?x": "Fred"}, "self check case - valid substitution of the same constant to the same variable"],
+    ["(future George Fred)", "(future ?y ?y)", None, "self check case - invalid substitution of the different constants to the same variable"],
+]
+run_tests(self_check_test_cases)
