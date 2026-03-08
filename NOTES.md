@@ -510,11 +510,11 @@ Review:
         - quantifiers (∃, ∀)
 
 - Quantification: 
-    - ∀xp(x) - for every instantiations of x, p(x) is T. 
-    - ∃xp(x) - p(x) is true for at least one instantiation of x. 
+    - ∀xp(x) - for every instantiations of x, p(x) is T. Affinity for 'and'
+    - ∃xp(x) - p(x) is true for at least one instantiation of x. Affinity for 'or'
 - Duals: 
     - ∀xp(x) <=> ~∃x~p(x) 
-    - ∃x(px) <=> ~∀x~p(x)
+    - ∃x(px) <=> ~∀x~p(x) 
 
 - Universal Elimination:  give values in quantifiers
     - if ∀xp(x) is true then p(c) is true for any constant c in the domain 
