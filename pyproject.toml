@@ -1,2 +1,0 @@
-[tool.ruff.lint.pylint]
-max-statements = 20
