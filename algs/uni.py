@@ -1,6 +1,6 @@
 import tokenize
 from io import StringIO
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 """ Psuedocode
 def unification( exp1, exp2):
@@ -63,81 +63,95 @@ def is_constant(exp):
     return isinstance(exp, str) and not is_variable(exp)
 
 
-def apply(result, list_expression1, list_expression2):
-    # TODO should be recursive ?
-    list_expression1 = [result[i] if is_variable(i) and i in result else i for i in list_expression1]
-    list_expression2 = [result[i] if is_variable(i) and i in result else i for i in list_expression2]
-    return list_expression1, list_expression2
-
-
-def composition(result1: Dict, result2: Dict, trace: bool = False):
-    result = {**result1, **result2}
-    if trace:
-        print(f"New substitution List: {result1} + {result2} -> {result}")
-    return result
-
-
-def occurs(variable, expression):
+def occurs(variable: str, expression: List) -> bool:
     if variable == expression:
         return True
-    if isinstance(expression, list):
+
+    if isinstance(expression, list):  # recurse
         for subexpressions in expression:
             if occurs(variable, subexpressions):
                 return True
     return False
 
 
-def split_expressions(list_expression1, list_expression2):
-    first1, rest1 = list_expression1[0], list_expression1[1:]
-    first2, rest2 = list_expression2[0], list_expression2[1:]
-    return first1, rest1, first2, rest2
-
-
-def assign(variable, expression):
-    if isinstance(expression, list):
-        expression = "(" + " ".join(expression) + ")"
-    return {variable: expression}
-
-
-def unification(list_expression1, list_expression2, trace=False) -> Dict | None:
-    if trace:
-        print(f"Unifying {list_expression1} & {list_expression2}")
-
-    if (is_constant(list_expression1) and is_constant(list_expression2)) or (len(list_expression1) == 0 and len(list_expression2) == 0):  # add check for isinstance(x,list)
-        if list_expression1 == list_expression2:
-            return {}
-        return None
-
-    if is_variable(list_expression1):
-        if occurs(list_expression1, list_expression2):
-            return None
-        return assign(list_expression1, list_expression2)
-
-    if is_variable(list_expression2):
-        if occurs(list_expression2, list_expression1):
-            return None
-        return assign(list_expression2, list_expression1)
-
-    first1, rest1, first2, rest2 = split_expressions(list_expression1, list_expression2)
-
-    result1 = unification(first1, first2, trace)
-    if result1 is None:
-        return None
-
-    rest1, rest2 = apply(result1, rest1, rest2)
-
-    result2 = unification(rest1, rest2, trace)
-
-    if result2 is None:  # if result2 is None or is_contradiction(result1, result2, trace):
-        return None
-
-    return composition(result1, result2, trace)
-
-
 def list_check(parsed_expression):
     if isinstance(parsed_expression, list):
         return parsed_expression
     return [parsed_expression]
+
+
+def apply(substitutions: Dict, expression: List) -> List:
+    return [substitutions[i] if is_variable(i) and i in substitutions else i for i in expression]
+
+
+def composition(substitutions1: Dict, substitutions2: Dict, trace: bool = False) -> Dict | None:
+    if any(x in substitutions2 for x in substitutions1):
+        return None
+
+    result = {**substitutions1, **substitutions2}
+    if trace:
+        print(f"New substitution List: {substitutions1} + {substitutions2} -> {result}")
+    return result
+
+
+def deatomize(expression: str | List) -> str | None:
+    if isinstance(expression, str):  # base-case
+        return expression
+
+    if isinstance(expression, list):  # recurse
+        str_expression = []
+        for subexpressions in expression:
+            result = deatomize(subexpressions)
+            if result is None:
+                return None
+            str_expression.append(result)
+        return "(" + " ".join(str_expression) + ")"
+
+    return None
+
+
+def assign(variable: str, expression: List | str) -> Dict:
+    if isinstance(expression, list):
+        expression = deatomize(expression)  # type: ignore list_expression1 is list by isinstance test
+    return {variable: expression}
+
+
+def split_expression(list_expression: List) -> Tuple[str, List] | None:
+    if len(list_expression) == 0:
+        return None
+    first1, rest1 = list_expression[0], list_expression[1:]
+    return first1, rest1
+
+
+def is_unmodifiable(list_expression1: List | str, list_expression2: List | str) -> bool:
+    if is_constant(list_expression1) and is_constant(list_expression2):
+        return True
+
+    if (isinstance(list_expression1, list) and isinstance(list_expression2, list)) and (len(list_expression1) == 0 and len(list_expression2) == 0):
+        return True
+    return False
+
+
+def unification(list_expression1: List | str, list_expression2: List | str, trace: bool = False) -> Dict | None:
+    print(f"Trying to unify {list_expression1} with {list_expression2}") if trace else None
+    if is_unmodifiable(list_expression1, list_expression2):
+        return {} if list_expression1 == list_expression2 else None
+
+    if is_variable(list_expression1):
+        return None if occurs(list_expression1, list_expression2) else assign(list_expression1, list_expression2)  # type: ignore list_expression1 is str by test of is_variable
+
+    if is_variable(list_expression2):
+        return None if occurs(list_expression2, list_expression1) else assign(list_expression2, list_expression1)  # type: ignore list_expression2 is str by test of is_variable
+
+    first1, rest1 = split_expression(list_expression1)  # type: ignore list_expression1 is str by test of is_variable
+    first2, rest2 = split_expression(list_expression2)  # type: ignore list_expression2 is list by test of is_variable
+    result1 = unification(first1, first2, trace)
+    if result1 is None:
+        return None
+
+    rest1, rest2 = apply(result1, rest1), apply(result1, rest2)
+    result2 = unification(rest1, rest2, trace)
+    return None if result2 is None else composition(result1, result2, trace)
 
 
 def unify(s_expression1, s_expression2):
