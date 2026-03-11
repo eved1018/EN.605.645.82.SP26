@@ -31,43 +31,56 @@ def parse_attrs(filename):
 
 ### Tree
 
-#  node.attr = attr
-#  node.children = [nodes]
 
+def create_node(tree, attribute):
+    if "nodes" not in tree:
+        tree["nodes"] = set()
+    tree["nodes"].add(attribute)
+    return attribute
 
+def add_child(tree, parent, child, value):
+    if "edges" not in tree:
+        tree["edges"] = {}
 
-def create_node(tree, attribute=None, label=None):
-    node_id = len(tree["nodes"])
-    tree["nodes"].append(node_id)
-    tree["attributes"][node_id] = attribute
-    tree["labels"][node_id] = label
-    return node_id
+    if parent not in tree["edges"]:
+        tree["edges"][parent] = {}
 
+    tree["edges"][parent][value] = child
+    return tree
+    
 
-def add_child(tree, parent_id, edge_value, child_id):
-    tree["edges"][(parent_id, child_id)] = edge_value
+def get_children(tree, node):
+    return tree["edges"].get(node, {}).items()
 
+def pretty_print_tree(tree, root): # DFS
+    if "nodes" not in tree or "edges" not in tree:
+        raise Exception("Tree does not contain keys ['nodes', 'edges']")
+    if len(tree["nodes"]) == 0:
+        raise Exception("No nodes in tree")
 
-def get_children(tree, parent):
-    return [child[1] for child in tree["edges"] if child[0] == parent]
-
-def pretty_print_tree(tree):
-    paths = {tree["root"]: []}
-    frontier = [tree["root"]]
+    rows = []
+    paths = {root: []}
+    frontier = [root]
 
     while frontier:
-        node = frontier.pop()
-        attr = tree["attributes"][node]
-        children = get_children(tree, node)
+        parent = frontier.pop() 
+        children = get_children(tree, parent)
 
         if not children:
-            print(" -> ".join(paths[node]) + f" -> | {tree['labels'][node]} |")
-            continue
-
-        for child in reversed(children):
-            edge_value = tree["edges"][(node, child)]
-            paths[child] = paths[node] + [f"{attr} = {edge_value}"]
+            path = paths[parent]
+            decision = []
+            for feature, attr in path:
+                decision.append(f"{feature}: {attr} ->")
+            decision.append(f"| {parent} |")
+            rows.append(" ".join(decision))
+        
+        for attr, child in children:
+            paths[child] =  paths[parent] + [(parent, attr)]
             frontier.append(child)
+    
+    print("\n".join(rows))
+    return 
+
 
 #### Data Parsing
 def parse_data(file_name: str) -> list[list]:
@@ -78,6 +91,7 @@ def parse_data(file_name: str) -> list[list]:
         data.append(datum)
     random.shuffle(data)
     return data
+
 
 ### Alg
 def is_homogeneous(data, label_index):
@@ -166,31 +180,36 @@ def domain(attributes, feature):
 def get_subset(data, attr_index, attr):
     return [deepcopy(row) for row in data if row[attr_index] == attr]
 
+
 def remove_features(features, attr_index):
     new_features = deepcopy(features)
     new_features.pop(attr_index)
     return new_features
 
-def id3(data, features, attributes, label_index, labels, default, tree, trace = False):
+# node should always be a label or a feature (not observation)
+
+def id3(data, features, attributes, label_index, labels, default, tree, trace=False):
     if trace:
-        print(features, attributes)
+        print(f"[DEBUG] {features=}, {attributes=}")
+
     if len(data) == 0:
-        return create_node(tree, label=default)
+        return create_node(tree, default)
 
     if is_homogeneous(data, label_index):
-        return create_node(tree, label=get_label(data, label_index))
+        return create_node(tree, get_label(data, label_index))
 
-    if len(attributes) == 0:
-        return create_node(tree, label=get_majority_label(data, label_index))
-    
+    if len(features) == 0:
+        return create_node(tree, get_majority_label(data, label_index))
+
     index, attr = pick_best_attribute(data, features, attributes, label_index, labels)
+    
     node = create_node(tree, attribute=attr)
     default_label = get_majority_label(data, label_index)
     for value in domain(attributes, attr):
         subset = get_subset(data, index, value)
         new_features = remove_features(features, index)
         child = id3(subset, new_features, attributes, label_index, labels, default_label, tree, trace)
-        add_child(tree, node, value, child)
+        tree = add_child(tree, node, child, value)
     return node
 
 
@@ -214,12 +233,14 @@ def classify(tree, observations):
 def cross_validate(data):
     return
 
+
 def build_tree(data, attributes, label_index, labels):
-    features = {c:k for c, k in enumerate(attributes)}
-    tree = {"nodes": [], "edges": {}, "attributes": {}, "labels": {}, "root": None}
-    root = id3(data, features, attributes, label_index, labels, get_majority_label(data, label_index), tree, True)
-    tree["root"] = root
-    return tree
+    features = {c: k for c, k in enumerate(attributes)}
+    tree = {}
+    trace = False
+    root = id3(data, features, attributes, label_index, labels, get_majority_label(data, label_index), tree, trace)
+    return root, tree
+
 
 # data = parse_data("Module8/agaricus-lepiota-3.data")
 # attrs = parse_attrs("Module8/agaricus-lepiota-3.attrs")
@@ -230,29 +251,30 @@ def build_tree(data, attributes, label_index, labels):
 feature_names = ["Shape", "Size", "Color", "Safe?"]
 attributes = {
     "Shape": ["round", "square"],
-    "Size":  ["large", "small"],
+    "Size": ["large", "small"],
     "Color": ["blue", "green", "red"],
 }
 label_index = 3
 labels = ["yes", "no"]
 
 data = [
-    ["round", "large", "blue",  "no"],
-    ["square","large", "green", "yes"],
-    ["square","small", "red",   "no"],
-    ["round", "large", "red",   "yes"],
-    ["square","small", "blue",  "no"],
-    ["round", "small", "blue",  "no"],
-    ["round", "small", "red",   "yes"],
-    ["square","small", "green", "no"],
+    ["round", "large", "blue", "no"],
+    ["square", "large", "green", "yes"],
+    ["square", "small", "red", "no"],
+    ["round", "large", "red", "yes"],
+    ["square", "small", "blue", "no"],
+    ["round", "small", "blue", "no"],
+    ["round", "small", "red", "yes"],
+    ["square", "small", "green", "no"],
     ["round", "large", "green", "yes"],
-    ["square","large", "green", "yes"],
-    ["square","large", "red",   "no"],
-    ["square","large", "green", "yes"],
-    ["round", "large", "red",   "yes"],
-    ["square","small", "red",   "no"],
+    ["square", "large", "green", "yes"],
+    ["square", "large", "red", "no"],
+    ["square", "large", "green", "yes"],
+    ["round", "large", "red", "yes"],
+    ["square", "small", "red", "no"],
     ["round", "small", "green", "no"],
 ]
 
-tree = build_tree(data, attributes, label_index, labels)
-pretty_print_tree(tree)
+root, tree = build_tree(data, attributes, label_index, labels)
+print(root, tree)
+pretty_print_tree(tree, root)
