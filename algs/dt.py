@@ -70,15 +70,14 @@ def pretty_print_tree(tree):
             frontier.append(child)
 
 #### Data Parsing
-def parse_data(file_name: str, feature_names: list) -> list[dict]:
+def parse_data(file_name: str) -> list[list]:
     data = []
-    with open(file_name, "r") as f:
-        for line in f:
-            values = line.rstrip().split(",")
-            data.append(dict(zip(feature_names, values)))
+    file = open(file_name, "r")
+    for line in file:
+        datum = line.rstrip().split(",")
+        data.append(datum)
     random.shuffle(data)
     return data
-
 
 ### Alg
 def is_homogeneous(data, label_index):
@@ -118,13 +117,13 @@ def get_majority_label(data, label_index):
 #     return entropy
 
 
-def calculate_entropy(data, attr, attributes, label_index, labels):
+def calculate_entropy(data, attr_index, attr, attributes, label_index, labels):
     subset_sizes = {i: 0 for i in attributes[attr]}
     label_counts = {l: {a: 0 for a in attributes[attr]} for l in labels}
     total_size = 0
 
     for row in data:
-        observation = row[attr]
+        observation = row[attr_index]
         label = row[label_index]
         subset_sizes[observation] += 1
         label_counts[label][observation] += 1
@@ -144,33 +143,37 @@ def calculate_entropy(data, attr, attributes, label_index, labels):
     return entropy
 
 
-def pick_best_attribute(data, attributes, label_index, labels):
+def pick_best_attribute(data, features, attributes, label_index, labels):
     best_attr = None
     best_entropy = inf
+    best_index = -1
 
-    for attr in attributes:
-        entropy = calculate_entropy(data, attr, attributes, label_index, labels)
+    for index, attr in features.items():
+        entropy = calculate_entropy(data, index, attr, attributes, label_index, labels)
 
         if entropy < best_entropy:
             best_attr = attr
             best_entropy = entropy
+            best_index = index
 
-    return best_attr
+    return best_index, best_attr
 
 
 def domain(attributes, feature):
     return attributes[feature]
 
 
-def get_subset(data, attr, value):
-    return [deepcopy(row) for row in data if row[attr] == value]
+def get_subset(data, attr_index, attr):
+    return [deepcopy(row) for row in data if row[attr_index] == attr]
 
-def remove_attr(attributes, attr):
-    new_attributes = deepcopy(attributes)
-    new_attributes.pop(attr)
-    return new_attributes
+def remove_features(features, attr_index):
+    new_features = deepcopy(features)
+    new_features.pop(attr_index)
+    return new_features
 
-def id3(data, attributes, label_index, labels, default, tree):
+def id3(data, features, attributes, label_index, labels, default, tree, trace = False):
+    if trace:
+        print(features, attributes)
     if len(data) == 0:
         return create_node(tree, label=default)
 
@@ -179,15 +182,14 @@ def id3(data, attributes, label_index, labels, default, tree):
 
     if len(attributes) == 0:
         return create_node(tree, label=get_majority_label(data, label_index))
-
-    # print(attributes)
-    attr = pick_best_attribute(data, attributes, label_index, labels)
+    
+    index, attr = pick_best_attribute(data, features, attributes, label_index, labels)
     node = create_node(tree, attribute=attr)
     default_label = get_majority_label(data, label_index)
     for value in domain(attributes, attr):
-        subset = get_subset(data, attr, value)
-        new_attributes = remove_attr(attributes, attr)
-        child = id3(subset, new_attributes, label_index, labels, default_label, tree)
+        subset = get_subset(data, index, value)
+        new_features = remove_features(features, index)
+        child = id3(subset, new_features, attributes, label_index, labels, default_label, tree, trace)
         add_child(tree, node, value, child)
     return node
 
@@ -213,8 +215,9 @@ def cross_validate(data):
     return
 
 def build_tree(data, attributes, label_index, labels):
-    tree = {"nodes": [], "edges": {}, "attributes": {}, "labels": {}, "edge_values": {}, "root": None}
-    root = id3(data, attributes, label_index, labels, get_majority_label(data, label_index), tree)
+    features = {c:k for c, k in enumerate(attributes)}
+    tree = {"nodes": [], "edges": {}, "attributes": {}, "labels": {}, "root": None}
+    root = id3(data, features, attributes, label_index, labels, get_majority_label(data, label_index), tree, True)
     tree["root"] = root
     return tree
 
@@ -230,10 +233,10 @@ attributes = {
     "Size":  ["large", "small"],
     "Color": ["blue", "green", "red"],
 }
-label_index = "Safe?"
+label_index = 3
 labels = ["yes", "no"]
 
-raw_data = [
+data = [
     ["round", "large", "blue",  "no"],
     ["square","large", "green", "yes"],
     ["square","small", "red",   "no"],
@@ -250,7 +253,6 @@ raw_data = [
     ["square","small", "red",   "no"],
     ["round", "small", "green", "no"],
 ]
-data = [dict(zip(feature_names, row)) for row in raw_data]
 
 tree = build_tree(data, attributes, label_index, labels)
 pretty_print_tree(tree)
