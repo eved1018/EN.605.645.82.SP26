@@ -542,4 +542,30 @@ Review:
     - ∃xp(x) -> p(C)
     -  
 
+# Decision Trees: 
+- features = attributes | labels = classification 
+- we want to examine the features in the best order to classify the data
+- we may not need all the features (some are never necessary / some are not needed for a certain tree path) (feature reduction)
+
+- ID3 alg: 
+    - goal is to find a set of attributes to partition by that split the data into groups
+    - the best case is if the attr splits the data into the same groups as if we partitioned by the label 
+        - this is known as a homogeneous group (all the same label) as oppose to a heterogeneous group (mix of labels)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
