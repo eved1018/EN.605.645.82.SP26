@@ -551,6 +551,19 @@ Review:
     - goal is to find a set of attributes to partition by that split the data into groups
     - the best case is if the attr splits the data into the same groups as if we partitioned by the label 
         - this is known as a homogeneous group (all the same label) as oppose to a heterogeneous group (mix of labels)
+    -  we choose the best attribute by using entropy of each features partition and then weight each supgroup by it relative frequency
+    - Entropy = E(s) = -Ppos + log2(Pos) - Pneg log2(Pneg) | where Ppos and Pneg are the proportion of positive and negative attributes
+    - entropy is at it max when the feature splits the data 50/50 ( ie labels are evenly distributed) - not helpful bc we want to partition in a way the discriminates btw the labels
+    - Avrg Entropy per Attr =  Fyes * E(yes)  + Fno * E(no) | where F is the freq (size of partition and E is entropy) 
+    - pick attr with highest information gain = Avrg Entropy before - Avrg Entropy after partition with attr
+    - repeat process until we get homogeneous set or run out of features
+
+- Decision Tree 
+    - internal nodes are checks - leaves are class labels
+    - pick majority class is leaves are homogeneous
+    - attr can only appear once in a path 
+    -  
+
 
 
 

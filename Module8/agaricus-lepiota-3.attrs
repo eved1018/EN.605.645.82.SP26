@@ -1,4 +1,8 @@
 {
+  "mushroom-type": {
+    "p": "poisonous",
+    "e": "edible"
+  },
   "cap-shape": {
     "b": "bell",
     "c": "conical",
