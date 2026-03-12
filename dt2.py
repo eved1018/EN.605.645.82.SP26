@@ -2,6 +2,7 @@ from copy import deepcopy
 from math import inf, log2
 import random
 import json
+import sys
 from collections import OrderedDict
 
 """
@@ -25,18 +26,16 @@ from collections import OrderedDict
 ### Tree
 
 
-def create_node(attribute):
-    return {"node": attribute, "children": []}
+def create_node(tree, attribute):
+    return {"node" : attribute, "children": []}
 
-
-def add_child(parent, child, value):
+def add_child(tree, parent, child, value):
     parent["children"].append({"value": value, "child": child})
-    return parent
+    return tree
 
 
-def get_children(node):
+def get_children(tree, node):
     return [(edge["value"], edge["child"]) for edge in node["children"]]
-
 
 def pretty_print_tree(root, tree):  # DFS
     rows = []
@@ -44,7 +43,7 @@ def pretty_print_tree(root, tree):  # DFS
 
     while frontier:
         parent, path = frontier.pop()
-        children = get_children(parent)
+        children = get_children(tree, parent)
 
         if not children:
             decision = []
@@ -114,34 +113,68 @@ def get_majority_label(data, label_index):
 
 
 def calculate_entropy(data, attr_index, attr, attributes, label_index, labels):
-    subset_sizes = {i: 0 for i in attributes[attr]}
-    label_counts = {l: {a: 0 for a in attributes[attr]} for l in labels}
-    total_size = 0
-
-    for row in data:
-        observation = row[attr_index]
-        label = row[label_index]
-        subset_sizes[observation] += 1
-        label_counts[label][observation] += 1
-        total_size += 1
-
-    entropy = 0
+    total_size = len(data)
+    total_entropy = 0
     for feature in attributes[attr]:
-        subset_size = subset_sizes[feature]
+        subset = [i for i in data if i[attr_index] == feature]
+        subset_size = len(subset)
         subset_entropy = 0
+
+        # Collect per-label stats before printing so feature_entropy is known per row
+        label_rows = []
         for label in labels:
-            p = label_counts[label][feature]
+            l = len([i for i in subset if i[label_index] == label])
             if subset_size == 0:
                 continue
-            p = p / subset_size
-            if p <= 0.0:
-                continue
-            subset_entropy += -1 * p * log2(p)
-        entropy += (subset_size / total_size) * subset_entropy
-    return entropy
+            p = l / subset_size
+            entropy = (-1 * p * log2(p)) if p > 0.0 and p < 1.0 else 0.0
+            subset_entropy += entropy
+            label_rows.append((label, l, p, entropy))
+
+        feature_entropy = (subset_size / total_size) * subset_entropy
+        total_entropy += feature_entropy
+
+        for label, l, p, entropy in label_rows:
+            p_str = f"{l}/{subset_size}"
+            formula = f"-{l}/{subset_size} * log2({l}/{subset_size})" if p > 0 else "0"
+            contrib = (subset_size / total_size) * entropy
+            contrib_str = f"{subset_size}/{total_size}*{entropy:.3f} = {contrib:.3f}"
+            print(f"{attr},{feature},{label},{l},{p_str},{formula},{entropy:.3f},{contrib_str}")
+
+    # Summary line: Feature in first column, Feature_entropy in last, empty cols in between
+    print(f"{attr},,,,,,, {total_entropy:.3f}")
+    return total_entropy
 
 
-def pick_best_attribute(data, features, attributes, label_index, labels, trace=False):
+# def calculate_entropy(data, attr_index, attr, attributes, label_index, labels):
+#     subset_sizes = {i: 0 for i in attributes[attr]}
+#     label_counts = {l: {a: 0 for a in attributes[attr]} for l in labels}
+#     total_size = 0
+
+#     for row in data:
+#         observation = row[attr_index]
+#         label = row[label_index]
+#         subset_sizes[observation] += 1
+#         label_counts[label][observation] += 1
+#         total_size += 1
+
+#     entropy = 0
+#     for feature in attributes[attr]:
+#         subset_size = subset_sizes[feature]
+#         subset_entropy = 0
+#         for label in labels:
+#             p = label_counts[label][feature]
+#             if subset_size == 0:
+#                 continue
+#             p = p / subset_size
+#             if p <= 0.0:
+#                 continue
+#             subset_entropy += -1 * p * log2(p)
+#         entropy += (subset_size / total_size) * subset_entropy
+#     return entropy
+
+
+def pick_best_attribute(data, features, attributes, label_index, labels):
     best_attr = None
     best_entropy = inf
     best_index = -1
@@ -153,8 +186,6 @@ def pick_best_attribute(data, features, attributes, label_index, labels, trace=F
             best_attr = attr
             best_entropy = entropy
             best_index = index
-    if trace:
-        print(f"Lowest Entropy Attr: {best_index=} {best_attr} {best_entropy=}")
 
     return best_index, best_attr
 
@@ -173,39 +204,61 @@ def remove_features(features, attr_index):
     return new_features
 
 
-def id3(data, features, attributes, label_index, labels, default_label=None, trace=False):
+# node should always be a label or a feature (not observation)
+
+
+def id3(data, features, attributes, label_index, labels, default, tree, trace=False):
     if trace:
-        print(f"[DEBUG] {features=}, {attributes=}")
+        print(f"[DEBUG] {features=}, {attributes=}", file=sys.stderr)
 
     if len(data) == 0:
-        print("[DEBUG] Base Case - empty data")
-        default_label = get_majority_label(data, label_index) if default_label is None else default_label
-        return create_node(default_label)
+        print("[DEBUG] Base Case - empty data", file=sys.stderr)
+        return create_node(tree, default)
 
     if is_homogeneous(data, label_index):
-        print("[DEBUG] Base Case - homogenous data")
-        return create_node(get_label(data, label_index))
+        print("[DEBUG] Base Case - homogenous data", file=sys.stderr)
+        return create_node(tree, get_label(data, label_index))
 
     if len(features) == 0:
-        print("[DEBUG] Base Case - empty features")
-        return create_node(get_majority_label(data, label_index))
+        print("[DEBUG] Base Case - empty features", file=sys.stderr)
+        return create_node(tree, get_majority_label(data, label_index))
 
     index, attr = pick_best_attribute(data, features, attributes, label_index, labels)
+    print(f" | Lowest Entropy Attr: {index=} {attr=}", file=sys.stderr)
 
-    node = create_node(attr)
+    node = create_node(tree, attribute=attr)
     default_label = get_majority_label(data, label_index)
-
     for value in domain(attributes, attr):
         subset = get_subset(data, index, value)
-        # print(f"Partitioning {value=} from {attr=}")
+        print(f"Partitioning {value=} from {attr=}", file=sys.stderr)
         new_features = remove_features(features, index)
-        child = id3(subset, new_features, attributes, label_index, labels, default_label, trace)
-        node = add_child(node, child, value)
+        child = id3(subset, new_features, attributes, label_index, labels, default_label, tree, trace)
+        tree = add_child(tree, node, child, value)
     return node
 
 
 ### Testing
-def split_features(attributes, label):
+def create_folds(xs: list, n: int) -> list[list[list]]:
+    k, m = divmod(len(xs), n)
+    # be careful of generators...
+    return list(xs[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)] for i in range(n))
+
+
+def train(training_data):
+    decision_tree = None
+    return decision_tree
+
+
+def classify(tree, observations):
+    classifications = []
+    return classifications
+
+
+def cross_validate(data):
+    return
+
+
+def build_tree(data, attributes, label, trace= False):
     features = {}
     labels = None
     label_index = -1
@@ -215,75 +268,25 @@ def split_features(attributes, label):
             label_index = index
         else:
             features[index] = attr
-    return features, labels, label_index
-
-
-def train(data, attributes, label, trace=False):
-    features, labels, label_index = split_features(attributes, label)
-    tree = id3(data, features, attributes, label_index, labels, None, trace)
-    return tree
-
-def create_folds(xs: list, n: int) -> list[list[list]]:
-    k, m = divmod(len(xs), n)
-    # be careful of generators...
-    return list(xs[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)] for i in range(n))
-
-
-def traverse_tree(node, observation, features):
-    if len(node["children"] == 0):  # leaf
-        return node["node"]  # label
-    attribute = node["node"]
-    column = [k for k, v in features.items() if v == attribute][0]  # reverse lookup
-    obs_val = observation[column]
-    for edge in node["children"]:
-        if edge["value"] == obs_val:
-            return traverse_tree(edge["child"], observation, features)
-    return None
-
-
-def classify(tree, observations, features):
-    classifications = []
-    for row in observations:
-        label = traverse_tree(tree, row, features)
-        classifications.append(label)
-    return classifications
-
-
-def evaluate(data, classifications, label_index):
-    errors = 0
-    total = 0
-    for row, estimate in zip(data, classifications):
-        if row[label_index] == estimate:
-            errors += 1
-        total += 1
-    return errors / total
-
-def mask_label(data, label_index):
-    return [[value for idx, value in enumerate(row) if idx != label_index] for row in data]
-
-
-def cross_validate(data, attributes, label, train_fn=train, classify_fn= classify, eval_fn = evaluate, n_folds=10):
-    folds = create_folds(data, n_folds)
-
-    for idx, fold in enumerate(folds):
-        train = 
-
-
-
-    for f in folds: 
-        print(f)
-    return
+    tree = {}
+    root = id3(data, features, attributes, label_index, labels, get_majority_label(data, label_index), tree, trace)
+    return root, tree
 
 def test():
     data = parse_data("Module8/agaricus-lepiota-3.data")
     attributes, attr_map = parse_attrs("Module8/agaricus-lepiota-3.attrs")
     data = rename_data(data, attributes, attr_map)
-    root, tree = train(data, attributes, "mushroom-type")
+    root, tree = build_tree(data, attributes, "mushroom-type")
     pretty_print_tree(root, tree)
 
 
 def self_check():
-    attributes = {"Shape": ["round", "square"], "Size": ["large", "small"], "Color": ["blue", "green", "red"], "Safe?": ["yes", "no"]}
+    attributes = {
+        "Shape": ["round", "square"],
+        "Size": ["large", "small"],
+        "Color": ["blue", "green", "red"],
+        "Safe?": ["yes", "no"]
+    }
     label = "Safe?"
 
     data = [
@@ -303,11 +306,10 @@ def self_check():
         ["square", "small", "red", "no"],
         ["round", "small", "green", "no"],
     ]
-    cross_validate(data, attributes, label)
 
-    # root, tree = train(data, attributes, label, trace=False)
-    # print(root, tree)
-    # pretty_print_tree(root, tree)
+    print("Feature,Attribute,Label,Label Size,P,Entropy Formula,Entropy Value,Feature Entropy")
+    root, tree = build_tree(data, attributes, label, trace=False)
+    pretty_print_tree(root, tree)
 
 
 self_check()
