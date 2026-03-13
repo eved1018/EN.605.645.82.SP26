@@ -22,6 +22,7 @@ from collections import OrderedDict
 14 end 
 """
 
+# TODO remove missing values
 
 ### Tree
 
@@ -303,6 +304,15 @@ def self_check():
         ["square", "large", "red", "no"],
         ["square", "large", "green", "yes"],
         ["round", "large", "red", "yes"],
+        ["square", "small", "red", "no"],
+        ["round", "small", "green", "no"],
+    ]
+ data = [
+        ["square", "small", "red", "no"],
+        ["square", "small", "blue", "no"],
+        ["round", "small", "blue", "no"],
+        ["round", "small", "red", "yes"],
+        ["square", "small", "green", "no"],
         ["square", "small", "red", "no"],
         ["round", "small", "green", "no"],
     ]
