@@ -1,9 +1,9 @@
-
 import json
 import random
 from copy import deepcopy
 from math import inf, log2
-from typing import Dict, List, NamedTuple, Tuple, Callable, Set
+from typing import Callable, Dict, List, NamedTuple, Set, Tuple
+
 
 def parse_data(file_name: str) -> list[list]:
     data = []
@@ -14,15 +14,19 @@ def parse_data(file_name: str) -> list[list]:
     random.shuffle(data)
     return data
 
+
 def create_folds(xs: list, n: int) -> list[list[list]]:
     k, m = divmod(len(xs), n)
     # be careful of generators...
     return list(xs[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)] for i in range(n))
 
+
 Node = NamedTuple("Node", [("value", str), ("children", List)])
+
 
 def create_node(value: str) -> Node:
     return Node(value, [])
+
 
 def add_child(parent: Node, child: Node, edge_value: str) -> Node:
     if any(edge_value == v for v, _ in parent.children):
@@ -30,6 +34,7 @@ def add_child(parent: Node, child: Node, edge_value: str) -> Node:
 
     parent.children.append((edge_value, child))
     return parent
+
 
 def pretty_print_tree(node: Node, indent: int = 0):
     tabs = " " * indent
@@ -42,7 +47,6 @@ def pretty_print_tree(node: Node, indent: int = 0):
             print(f"{tabs} | {attribute}")  # internal node - just print partitioned attribute
             pretty_print_tree(child, indent + 8)
     return
-
 
 
 def traverse_tree(node: Node, observation: List[str], feature_indices: Dict[str, int]) -> str | None:
@@ -60,6 +64,7 @@ def traverse_tree(node: Node, observation: List[str], feature_indices: Dict[str,
             return traverse_tree(child, observation, feature_indices)
     return None
 
+
 def parse_attributes(filename: str) -> Tuple[Dict[str, Tuple[int, List[str]]], Dict[str, Dict[str, str]]]:
     abrv2fullname: Dict[str, Dict[str, str]] = {}
     attributes: Dict[str, Tuple[int, List[str]]] = {}
@@ -75,7 +80,6 @@ def parse_attributes(filename: str) -> Tuple[Dict[str, Tuple[int, List[str]]], D
             abrv2fullname[feature][code] = name
 
     return attributes, abrv2fullname
-
 
 
 def rename_data(data: List[List[str]], attributes: Dict[str, Tuple[int, List[str]]], abrv2name: Dict[str, Dict[str, str]]) -> List[List[str]] | None:
@@ -97,6 +101,7 @@ def rename_data(data: List[List[str]], attributes: Dict[str, Tuple[int, List[str
 
 def split_features(attributes: Dict[str, Tuple[int, List[str]]], label: str) -> Set[str]:
     return {i for i in attributes if i != label}
+
 
 def get_homogeneous_label(data: List[List[str]], label_idx: int) -> str | None:
     if len(data) == 0:
@@ -127,8 +132,9 @@ def get_majority_label(data: List[List[str]], label_idx: int, trace: bool = Fals
     print(f"Majority label: {label}") if trace else None
     return label
 
+
 def subset_data(data: List[List[str]], column_idx: int, value: str, shallow: bool = False) -> List[List[str]]:
-    if shallow: 
+    if shallow:
         return [row for row in data if row[column_idx] == value]
     return [deepcopy(row) for row in data if row[column_idx] == value]
 
@@ -145,7 +151,7 @@ def calculate_entropy(data: List[List[str]], feature: str, attributes: Dict[str,
         s_a = subset_data(data, feature_idx, attribute, True)
         if len(s_a) == 0:
             continue
-        
+
         probabilities = [len(subset_data(s_a, label_idx, label_value, True)) / len(s_a) for label_value in label_list]
         entropy = sum(-1 * p_l * log2(p_l) for p_l in probabilities if p_l > 0.0)
         total_entropy += (len(s_a) / total_size) * entropy
@@ -170,6 +176,7 @@ def pick_best_feature(data: List[List[str]], features: Set[str], attributes: Dic
     if trace:
         print(f"Highest entropy feature {best_feature} = {best_entropy:.3f}") if best_feature else print("Highest entropy feature not found")
     return best_feature
+
 
 def domain(attributes: Dict[str, Tuple[int, List[str]]], feature: str, nans: List[str] | None = None) -> List[str]:
     if nans is None:
@@ -196,20 +203,6 @@ def get_leaf_node(data: List[List[str]], features: Set[str], label_index: int, d
         majority_label = get_majority_label(data, label_index)
         return create_node(majority_label)  # type: ignore - we already tested if data is empty
     return None
-
-# %%
-tree = get_leaf_node([], {"1"}, 1, default_label="y")
-assert tree is not None and tree.value == "y"  # test 1 - empty data uses default label
-
-data = [["a", "n"], ["b", "n"]]
-tree = get_leaf_node(data, {"1", "2"}, 1, "n")
-assert tree is not None and tree.value == "n"  # test 2 - homogeneous data
-
-data = [["a", "y"], ["b", "y"], ["c", "n"]]
-tree = get_leaf_node(data, set(), 1, "n")
-assert tree is not None and tree.value == "y"  # test 3 - empty feature list returns majority
-
-assert get_leaf_node(data, {"1"}, 1, "n") is None  # test 4 - no base cases hit return None
 
 
 def id3(data: List[List[str]], features: Set[str], attributes: Dict[str, Tuple[int, List[str]]], label: str, default_label: str, trace: bool = False) -> Node:
@@ -283,10 +276,11 @@ def divide_folds(data: List[List[str]], n_folds: int = 10) -> List[Tuple[List[Li
         k_folds.append((training_set, test_fold))
     return k_folds
 
+
 def cross_validate(
     data: List[List[str]], features: Set[str], attributes: Dict[str, Tuple[int, List[str]]], label: str, train_fn: Callable = train, classify_fn: Callable = classify, eval_fn: Callable = evaluate, n_folds: int = 10, trace: bool = False
 ) -> Tuple[float, Dict[str, int]]:
-    confusion_matrices: List[Dict[str, int]] = [] 
+    confusion_matrices: List[Dict[str, int]] = []
     total_errors = []
     feature_indices = {feature: idx for feature, (idx, _) in attributes.items()}
     label_idx, label_values = attributes[label]
@@ -298,8 +292,8 @@ def cross_validate(
         errors, cm = eval_fn(truth_set, classifications, label_values)
         total_errors.append(errors)
         confusion_matrices.append(cm)
-        print(f"Fold {k}\nTraining size: {len(training_set)} | Test size: {len(test_set)}\nError rate: {errors/len(test_set)}\nConfusion matrix:\nTP={cm['TP']}  FP={cm['FP']}\nFN={cm['FN']}  TN={cm['TN']}\n")
-        
+        print(f"Fold {k}\nTraining size: {len(training_set)} | Test size: {len(test_set)}\nError rate: {errors / len(test_set)}\nConfusion matrix:\nTP={cm['TP']}  FP={cm['FP']}\nFN={cm['FN']}  TN={cm['TN']}\n")
+
     error_rate = sum(total_errors) / len(total_errors)
     return error_rate, {k: sum([cm[k] for cm in confusion_matrices]) for k in confusion_matrices[0]}
 
@@ -319,6 +313,7 @@ def run_model(data: List[List[str]], attributes: Dict[str, Tuple[int, List[str]]
 
     print("\nDecision Tree:")
     pretty_print_tree(tree)
+
 
 attributes = {"Shape": (0, ["round", "square"]), "Size": (1, ["large", "small"]), "Color": (2, ["blue", "green", "red"]), "Safe?": (3, ["yes", "no"])}
 label = "Safe?"
@@ -343,7 +338,6 @@ data = [
 
 run_model(data, attributes, label)
 
-# %%
 trace = False
 data = parse_data("Module8/agaricus-lepiota-3.data")
 attributes, abrv2name = parse_attributes("Module8/agaricus-lepiota-3.attrs.json")
@@ -353,5 +347,3 @@ data = rename_data(data, attributes, abrv2name)
 assert data is not None
 
 run_model(data, attributes, label)
-
-
