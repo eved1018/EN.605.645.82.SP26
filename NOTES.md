@@ -567,11 +567,100 @@ Review:
 
 
 
+# Bayesian networks
+
+- graphical model 
+- alternate to expert system 
+- Best for sparse local interactions (things are somewhat independent from one another)
+- overcome noise or missing features in the data 
+- probability table - freq of each possible combination of attribute+label / size of data
+- joint prob => P(x or y ) = P(x) + P(y)
+- conditioning: 
+    - given a set of feature and assigned attribute (ie a leaf node in dt)
+    - cross out all events in the prob table that arent in the leaf
+    - sum all the columns (marginalizing) 
+    - normalize each column to to the sum of remaining column sums ie  x/(x+y)
+    - p(~x) = 1- p(x)
+- problem - this grows exponentially in size of data, which also means this requires having a lot of data 
+- notation: 
+    - P(A=a,B=b) = single prob of feature A being attribute a and feature B being attribute b) , P(A=a) for all a in A is 1
+    - Joint prob: P(A,B), where A and B are features is saying what is a prob distribution -> for a in A, for b in B, p+=P(A=a,B=b) note P(A,B) = 1
+    - Conditional prob: P(A | B) - A given B - P(A,B) / P(B) 
+        - columns or rows sum to 1
+    - Total prob: P(A) += P(A|B=b) * (P(B=b) for b in B
+    - P(A,B) = P(A|B) P(B)
+    - P(A, B, C) = P(A|B,C) * P(B|C) * P(C)
+
+- Bayesian Networks: Knowledge engineering  
+    - prior = P(B) 
+    - Condition = P(A|B) - note "A" is the Conditional var 
+    - we can make a "network" by drawing nodes from prior to condition (  P(A,B) = P(A|B) * P(B)  [B] -> [A]   )
+    - Conditional independence: P(A|B) = P(A) -> knowing B's value doesn't tell us anything about A
+        - independence relationships make simpler networks by breaking complex ones into smaller disconnected networks 
+        - sometimes we introduce our own independence by introducing "Latent" variable which combine variables (features) so that all the latent vars are independent
+
+- Inference: 
+    - diagntostic inference - given an outcome what is the prob that event happened 
+    - cusual inference - given event what is the prob that some event caused it 
+    - intercuasal inference - if one event happened what is the prob another event also happened 
+
+- Doing Inference:
+    - assume all variables are binary (2 values)
+
+    - Brute Force: sum the probability of all the values were asking about - ie do marginalizing over terms
+
+    - Variable Eliminiation: 
+        - combine distributions using pointwise multiplication (ie make new node in graph by "summing" two nodes)
+        - marginalize over a node
+        - repeate combination until only 2 nodes are left
+        - normalize 
+
+    - Gibbs Sampleing (AKA Markov Chain Monte Carlo) - Approximation
+        - start with a dict of variables 
+        - make a random assignment to each variable (set each to 1 or -1)
+        - rotate through each varable and assign it a value based on the other variables (ie assume all the other variable assignments are true) 
+            - assign the value based on prob distribution - P(A|b, c, d)  (b,c,d.... are all values either randomly assigned or assigned by alg) 
+                - we dont need to include varibales that are d-seperate from the variable of interest 
+        - repeate a whole bunch of times
+
+
+    - D-Sepetation - the value of a node x is completely determined by its Markob blanket 
+        - Markov Blaket - a nodes parent, a nodes childen and the other parents of a nodes children 
+        - this allows us to remove 
+
+
+ - Naive Bayes Network: 
+    - Simple network we can use for classifying, where we have known features and unknown labels - so we always have conditional prob
+    - Assumes Conditional independence 
+    - Bayes Theorem = P(H|E) = P(E|H)P(H) / P(E)  -> where H is hypothesis and E is Evidence 
+    - Conditional independence: 
+        - P(A,B =  P(A)P(C)
+        - P(A) = P(A|B)
+        - P(A, B|C) = P(A|C) P(B|C) 
+    - So for an observation we can get the probability for each label and pick the higher one
+    ```
+        C = set of label values
+        f = feature 
+        fi = attribute in domain of feature f 
+        n = training data size 
+
+        argmax c in C  p(c) ∏ p(fi|c) for i in f
+        
+        p(c) = #c/n -> number of rows with label value == c 
+        p(fi|c) = #(fi,c) +1 / #c +1 -> #(fi,c) is the number of times this feature value appears with the class label and #c is the number of times the class label appears
+    ```
+
+    - +1 smoothing -> makes sure all p(fi,c) are non-zero   
 
 
 
 
 
+
+
+
+
+    
 
 
 
