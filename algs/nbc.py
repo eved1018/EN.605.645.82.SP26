@@ -93,24 +93,37 @@ def naive_bayes_classifier(data: List[List[str]], features: List[str], attribute
 def train(data: List[List[str]], features: List[str], attributes: Dict[str, Tuple[int, List[str]]], label: str, trace=False) -> NBC:
     return naive_bayes_classifier(data, features, attributes, label, trace)
 
+
 def safe_div(x, y):
-    if x==0 or y == 0:
-        return 0 
-    return x/y
-        
+    if x == 0 or y == 0:
+        return 0
+    return x / y
+
+
+def calculate_estimates(model: NBC, observation: List[str], features: List[str], labels: List[str]):
+    estimates = {}
+    total_probability = 0
+    for label in labels:  # c = p(c) * PI(p(fi|c)) for fi in features for c in labels
+        probability = model.prior[label]
+        for feature, attr in zip(features, observation):
+            probability *= model.pf[label][feature][attr]
+
+        estimates[label] = probability
+        total_probability += probability
+
+    for label in labels:  # divide prob for for each label by sum of all prob
+        prob = estimates[label]
+        normalized_probability = prob / total_probability
+        estimates[label] = normalized_probability
+
+    estimated_label = max(estimates.items(), key=lambda x: x[1])[0]  # label with highest norm prob
+    return estimated_label, estimates
+
+
 def classify(model: NBC, observations: List[List[str]], features: List[str], labels: List[str]) -> List[Tuple[str, Dict[str, float]]]:
     classifications = []
     for row in observations:
-        estimates = {}
-        for label in labels:
-            c = model.prior[label]
-            for feature, attr in zip(features, row):
-                c *= model.pf[label][feature][attr]
-
-            total = sum(estimates.values())
-            estimates = {label: safe_div(score, total) for label, score in estimates.items()}  # normalize
-            estimates[label] = c
-        estimate_label = max(estimates.items(), key=lambda x: x[1])[0]
+        estimate_label, estimates = calculate_estimates(model, row, features, labels)
         classifications.append((estimate_label, estimates))
     return classifications
 
