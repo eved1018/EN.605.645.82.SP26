@@ -654,6 +654,27 @@ Review:
 
 
 
+# Planning: 
+
+- Components: 
+    - Start State - predicates (that are true)
+    - Actions - operators that have pre and post conditions 
+    - Goal states - predicates
+
+- We care about path to goal
+- Operators:
+    - name
+    - preconditions - things that need to be true to apply operator
+    - post-conditions - things that happen when applying operators
+        - add list - things that are now true
+        - delete list - things that are now false
+
+- Regression Planning - work backwards from goal
+    - "list" - FIFO stack with conjunctions of literals/predicates 
+    - FIFO = DFS
+    - 
+
+
 
 
 
