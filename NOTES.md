@@ -634,7 +634,7 @@ Review:
     - Assumes Conditional independence 
     - Bayes Theorem = P(H|E) = P(E|H)P(H) / P(E)  -> where H is hypothesis and E is Evidence 
     - Conditional independence: 
-        - P(A,B =  P(A)P(C)
+        - P(A,B) =  P(A)P(C)
         - P(A) = P(A|B)
         - P(A, B|C) = P(A|C) P(B|C) 
     - So for an observation we can get the probability for each label and pick the higher one
@@ -671,7 +671,7 @@ Review:
 
 - Regression Planning - work backwards from goal
     - "list" - FIFO stack with conjunctions of literals/predicates 
-    - FIFO = DFS
+    - FIFO = BFS
     - 
 
 
