@@ -1,0 +1,99 @@
+from copy import deepcopy
+
+
+def apply_action(x, y, dx, dy, world):
+    """Move (x,y) by (dx,dy); bounce back if out-of-bounds or wall."""
+    nx, ny = x + dx, y + dy
+    if 0 <= nx < len(world[0]) and 0 <= ny < len(world) and world[ny][nx] != "x":
+        return nx, ny
+    return x, y
+
+
+def get_states(world):
+    return [(c, r) for r, row in enumerate(world) for c in range(len(row))]
+
+
+def value_iteration(world, costs, goals, actions, gamma, e=0.01, max_iter=10_000):
+    rows, cols = len(world), len(world[0])
+
+    # Reward received when *entering* (x, y): goal reward or terrain cost
+    reward = [[costs.get(world[y][x], 0.0) for x in range(cols)] for y in range(rows)]
+    for (gx, gy), r in goals.items():
+        reward[gy][gx] = r
+
+    # Goal V stays 0 (terminal); immediate reward is captured in reward grid
+    v = [[0.0] * cols for _ in range(rows)]
+
+    for _ in range(max_iter):
+        v_last = deepcopy(v)
+        policy = {pos: "G" for pos in goals}
+
+        for x, y in get_states(world):
+            if world[y][x] == "x" or (x, y) in goals:
+                policy.setdefault((x, y), "x")
+                continue
+
+            best_action, best_val = max(
+                (((dx, dy), reward[ny][nx] + gamma * v_last[ny][nx])
+                 for dx, dy in actions
+                 for nx, ny in [apply_action(x, y, dx, dy, world)]),
+                key=lambda av: av[1]
+            )
+            policy[(x, y)] = best_action
+            v[y][x] = best_val
+
+        delta = max(
+            abs(v[y][x] - v_last[y][x])
+            for x, y in get_states(world)
+            if world[y][x] != "x" and (x, y) not in goals
+        )
+        if delta < e:
+            break
+    else:
+        print(f"Warning: did not converge after {max_iter} iterations (delta={delta:.6f})")
+
+    return policy
+
+
+_ARROW = {(-1, 0): "<", (1, 0): ">", (0, 1): "v", (0, -1): "^"}
+
+def pretty_print_policy(cols, rows, policy, world):
+    for r in range(rows):
+        for c in range(cols):
+            v = policy.get((c, r))
+            print(_ARROW.get(v, v) if isinstance(v, tuple) else (v or "?"), end="")
+        print()
+
+
+# ---------------------------------------------------------------------------
+# Test cases
+# ---------------------------------------------------------------------------
+
+world = [["o", "o", "o", "o", "o", "o", "o"]]
+costs = {"o": 0}
+goals = {(0, 0): 15, (6, 0): 10}
+moves = [(-1, 0), (1, 0)]
+gamma = 0.9
+
+policy = value_iteration(world, costs, goals, moves, gamma)
+pretty_print_policy(len(world[0]), len(world), policy, world)
+
+print()
+
+world = [
+    [".", ".", ".", ".", ".", "."],
+    [".", "*", "*", "*", "*", "."],
+    [".", "*", "*", "*", "*", "."],
+    [".", "*", "*", "x", "*", "."],
+    [".", "*", "*", "*", "*", "."],
+    [".", ".", ".", ".", ".", "."],
+    [".", ".", ".", ".", ".", "."],
+]
+
+moves = [(0, -1), (1, 0), (0, 1), (-1, 0)]
+costs = {".": -1, "*": -3, "^": -5, "~": -7}
+goals = {(len(world[0]) - 1, len(world) - 1): 100}
+gamma = 0.9
+
+policy = value_iteration(world, costs, goals, moves, gamma)
+pretty_print_policy(len(world[[118;1:3u0]), len(world), policy, world)
