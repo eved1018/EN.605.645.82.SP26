@@ -141,5 +141,10 @@ gamma = 0.9
 
 print()
 print()
+policy = value_iteration(world, costs, goal, moves, gamma)
+pretty_print_policy(len(world[0]), len(world), policy, world)
+
+print()
+print()
 policy = value_iteration(world, costs, goal, moves, gamma, 0.7)
 pretty_print_policy(len(world[0]), len(world), policy, world)
