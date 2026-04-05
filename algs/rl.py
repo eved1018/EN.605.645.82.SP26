@@ -40,73 +40,105 @@ def get_states(world):
     return states
 
 
-def take_action(x, y, dx, dy, world):
+def get_neighbors(x, y, moves, world):
     rows = len(world)
     cols = len(world[0])
-    x_prime, y_prime = x + dx, y + dy
-    if 0 <= x_prime < cols and 0 <= y_prime < rows and world[y_prime][x_prime] != "x":
-        return x_prime, y_prime
-    return x, y
+
+    actions = []
+    for dx, dy in moves:
+        x_prime, y_prime = x + dx, y + dy
+        if 0 <= x_prime < cols and 0 <= y_prime < rows and world[y_prime][x_prime] != "x":
+            actions.append((dx, dy))
+        else:
+            actions.append((0, 0))  # bounce
+    return actions
 
 
-def calulate_reward(x, y, actions, rewards, transition, v_last):
+def get_best_action(x, y, actions, rewards, transition, v_last, world, gamma, costs):
     max_action = None
     max_val = -inf
-    for dx, dy in actions:
-        x_prime, y_prime = take_action(x, y, dx, dy, world)
-        future_reward = transition * v_last[(x_prime, y_prime)]
+    for dx, dy in get_neighbors(x, y, actions, world):
+        x_prime, y_prime = x + dx, y + dy
+        future_reward = transition * v_last[y_prime][x_prime]
+
         if transition < 1.0:
-            for ddx, ddy in actions:
+            for ddx, ddy in get_neighbors(x, y, actions, world):
                 other_transition = (1 - transition) / (len(actions) - 1)
                 if (dx, dy) != (ddx, ddy):
-                    x_t, y_t = take_action(x, y, ddx, ddy, world)
-                    future_reward += other_transition * v_last[(x_t, y_t)]
+                    future_reward += other_transition * v_last[y + ddy][x + ddx]
 
-        val = rewards[(x, y)] - costs[world[y_prime][x_prime]] + gamma * future_reward
+        val = rewards[y][x] - costs[world[y_prime][x_prime]] + gamma * future_reward
         if val > max_val:
             max_val = val
             max_action = (dx, dy)
+
+        elif val == max_val:
+            max_action = "?"
+
     return max_action, max_val
 
 
-def update_policy(v, goals, world, actions, transition, rewards):
+def update_policy(v, goals, world, actions, transition, rewards, policy, gamma, costs):
     v_last = deepcopy(v)
-    policy = {state: "G" for state in goals}
     for x, y in get_states(world):
         if world[y][x] == "x":
-            policy[(x, y)] = "x"
+            policy[y][x] = "x"
             continue
 
         if (x, y) in goals:
-            v[(x, y)] = goals[(x, y)]
-            policy[(x, y)] = "G"
+            v[y][x] = goals[(x, y)]
+            policy[y][x] = "G"
             continue
-        max_action, max_val = calulate_reward(x, y, actions, rewards, transition, v_last)
-        policy[(x, y)] = max_action
-        v[(x, y)] = max_val
+
+        max_action, max_val = get_best_action(x, y, actions, rewards, transition, v_last, world, gamma, costs)
+        policy[y][x] = max_action
+        v[y][x] = max_val
     return policy, v, v_last
 
 
-def value_iteration(world, costs, goals, actions, gamma, transition=1.0, e=0.01):
+def value_iteration(world, costs, goals, actions, gamma, transition=1.0, e=0.01, max_iters=100, debug=False):
     rows = len(world)
     cols = len(world[0])
 
-    v = {state: 0.0 for state in get_states(world)}
-    rewards = {state: goals.get(state, 0.0) for state in get_states(world)}
+    v = [[0.0] * cols for _ in range(rows)]
+    policy = [[""] * cols for _ in range(rows)]
+    rewards = [[0.0] * cols for _ in range(rows)]
+    for (x, y), r in goals.items():
+        rewards[y][x] = r
+
     t = 0
-    while t < 100:
-        policy, v, v_last = update_policy(v, goals, world, actions, transition, rewards)
-        delta = max([abs(v[state] - v_last[state]) for state in get_states(world)])
+    while t < max_iters:
+        policy, v, v_last = update_policy(v, goals, world, actions, transition, rewards, policy, gamma, costs)
+        delta = max([abs(v[y][x] - v_last[y][x]) for x, y in get_states(world)])
+        if debug:
+            print(f"T={t}")
+            pretty_print_vi(v, v_last, rewards)
+            print("Policy")
+            pretty_print_policy(cols, rows, policy)
+            print()
         if delta < e:
             return policy
         t += 1
     return None
 
 
-def pretty_print_policy(cols, rows, policy, world):
+def pretty_print_vi(v, v_last, rewards):
+    print("Rewards:")
+    for row in rewards:
+        print(row)
+    print("V Last:")
+    for row in v_last:
+        print(row)
+    print("V:")
+    for row in v:
+        print(row)
+    return
+
+
+def pretty_print_policy(cols, rows, policy):
     for r in range(rows):
         for c in range(cols):
-            v = policy[(c, r)]
+            v = policy[r][c]
             if v == (-1, 0):
                 v = "<"
             elif v == (1, 0):
@@ -120,38 +152,42 @@ def pretty_print_policy(cols, rows, policy, world):
         print()
 
 
-world = [["o", "o", "o", "o", "o", "o", "o"]]
-costs = {"o": 0}
-goal = {(0, 0): 15, (6, 0): 10}
-moves = [(-1, 0), (1, 0)]
-gamma = 0.9
+def test():
+    # world = [["o", "o", "o", "o", "o", "o", "o"]]
+    # costs = {"o": 0}
+    # goal = {(0, 0): 15, (6, 0): 10}
+    # moves = [(-1, 0), (1, 0)]
+    # gamma = 0.9
+
+    # policy = value_iteration(world, costs, goal, moves, gamma, debug=True)
+
+    # print("Result:")
+    # pretty_print_policy(len(world[0]), len(world), policy)
+
+    world = [
+        [".", ".", ".", ".", ".", "."],
+        [".", "*", "*", "*", "*", "."],
+        [".", "*", "*", "*", "*", "."],
+        [".", "*", "*", "x", "*", "."],
+        [".", "*", "*", "*", "*", "."],
+        [".", ".", ".", ".", ".", "."],
+        [".", ".", ".", ".", ".", "."],
+    ]
+
+    moves = [(0, -1), (1, 0), (0, 1), (-1, 0)]
+    costs = {".": -1, "*": -3, "^": -5, "~": -7}
+    goal = {(len(world[0]) - 1, len(world) - 1): 100}  # Lower Right Corner FILL ME IN
+    gamma = 0.9
+
+    # print()
+    # print()
+    # policy = value_iteration(world, costs, goal, moves, gamma)
+    # pretty_print_policy(len(world[0]), len(world), policy)
+
+    print()
+    print()
+    policy = value_iteration(world, costs, goal, moves, gamma, 0.7, debug=True)
+    pretty_print_policy(len(world[0]), len(world), policy)
 
 
-policy = value_iteration(world, costs, goal, moves, gamma)
-pretty_print_policy(len(world[0]), len(world), policy, world)
-
-world = [
-    [".", ".", ".", ".", ".", "."],
-    [".", "*", "*", "*", "*", "."],
-    [".", "*", "*", "*", "*", "."],
-    [".", "*", "*", "x", "*", "."],
-    [".", "*", "*", "*", "*", "."],
-    [".", ".", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", "."],
-]
-
-
-moves = [(0, -1), (1, 0), (0, 1), (-1, 0)]
-costs = {".": -1, "*": -3, "^": -5, "~": -7}
-goal = {(len(world[0]) - 1, len(world) - 1): 100}  # Lower Right Corner FILL ME IN
-gamma = 0.9
-
-print()
-print()
-policy = value_iteration(world, costs, goal, moves, gamma)
-pretty_print_policy(len(world[0]), len(world), policy, world)
-
-print()
-print()
-policy = value_iteration(world, costs, goal, moves, gamma, 0.7)
-pretty_print_policy(len(world[0]), len(world), policy, world)
+test()
