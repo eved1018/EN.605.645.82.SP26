@@ -49,6 +49,44 @@ def take_action(x, y, dx, dy, world):
     return x, y
 
 
+def calulate_reward(x, y, actions, rewards, transition, v_last):
+    max_action = None
+    max_val = -inf
+    for dx, dy in actions:
+        x_prime, y_prime = take_action(x, y, dx, dy, world)
+        future_reward = transition * v_last[(x_prime, y_prime)]
+        if transition < 1.0:
+            for ddx, ddy in actions:
+                other_transition = (1 - transition) / (len(actions) - 1)
+                if (dx, dy) != (ddx, ddy):
+                    x_t, y_t = take_action(x, y, ddx, ddy, world)
+                    future_reward += other_transition * v_last[(x_t, y_t)]
+
+        val = rewards[(x, y)] - costs[world[y_prime][x_prime]] + gamma * future_reward
+        if val > max_val:
+            max_val = val
+            max_action = (dx, dy)
+    return max_action, max_val
+
+
+def update_policy(v, goals, world, actions, transition, rewards):
+    v_last = deepcopy(v)
+    policy = {state: "G" for state in goals}
+    for x, y in get_states(world):
+        if world[y][x] == "x":
+            policy[(x, y)] = "x"
+            continue
+
+        if (x, y) in goals:
+            v[(x, y)] = goals[(x, y)]
+            policy[(x, y)] = "G"
+            continue
+        max_action, max_val = calulate_reward(x, y, actions, rewards, transition, v_last)
+        policy[(x, y)] = max_action
+        v[(x, y)] = max_val
+    return policy, v, v_last
+
+
 def value_iteration(world, costs, goals, actions, gamma, transition=1.0, e=0.01):
     rows = len(world)
     cols = len(world[0])
@@ -57,38 +95,7 @@ def value_iteration(world, costs, goals, actions, gamma, transition=1.0, e=0.01)
     rewards = {state: goals.get(state, 0.0) for state in get_states(world)}
     t = 0
     while t < 100:
-        v_last = deepcopy(v)
-        policy = {state: "G" for state in goals}
-        for x, y in get_states(world):
-            if world[y][x] == "x":
-                policy[(x, y)] = "x"
-                continue
-
-            if (x, y) in goals:
-                v[(x, y)] = goals[(x, y)]
-                policy[(x, y)] = "G"
-                continue
-
-            max_action = None
-            max_val = -inf
-            for dx, dy in actions:
-                x_prime, y_prime = take_action(x, y, dx, dy, world)
-                future_reward = transition * v_last[(x_prime, y_prime)]
-                if transition < 1.0:
-                    for ddx, ddy in actions:
-                        other_transition = (1 - transition) / (len(actions) - 1)
-                        if (dx, dy) != (ddx, ddy):
-                            x_t, y_t = take_action(x, y, ddx, ddy, world)
-                            future_reward += other_transition * v_last[(x_t, y_t)]
-
-                val = rewards[(x, y)] - costs[world[y_prime][x_prime]] + gamma * future_reward
-                if val > max_val:
-                    max_val = val
-                    max_action = (dx, dy)
-
-            policy[(x, y)] = max_action
-            v[(x, y)] = max_val
-
+        policy, v, v_last = update_policy(v, goals, world, actions, transition, rewards)
         delta = max([abs(v[state] - v_last[state]) for state in get_states(world)])
         if delta < e:
             return policy
