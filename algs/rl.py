@@ -38,6 +38,7 @@ Policy = Dict[State, State | str]
 
 ACTION2TEXT = {(-1, 0): "<", (1, 0): ">", (0, 1): "v", (0, -1): "^"}
 
+
 def get_states(world):
     states = []
     for r, row in enumerate(world):
@@ -45,7 +46,8 @@ def get_states(world):
             states.append((c, r))
     return states
 
-def get_actions(state, actions, world, impassible = ["x"], bounce_back = False):
+
+def get_actions(state, actions, world, impassible=["x"], bounce_back=False):
     rows = len(world)
     cols = len(world[0])
 
@@ -59,7 +61,10 @@ def get_actions(state, actions, world, impassible = ["x"], bounce_back = False):
             moves.append((0, 0))
     return moves
 
-def get_action_value(world: World, state: State, action: State, actions: List[State], rewards: Reward, v_last: Reward, transition: float = 1.0, gamma: float = 1.0) -> Tuple[State, float]:
+
+def get_action_value(
+    world: World, state: State, action: State, actions: List[State], rewards: Reward, v_last: Reward, transition: float = 1.0, gamma: float = 1.0
+) -> Tuple[State, float]:
     x, y = state[0], state[1]
     x_prime, y_prime = x + action[0], y + action[1]
     future_reward = transition * v_last[y_prime][x_prime]
@@ -74,7 +79,18 @@ def get_action_value(world: World, state: State, action: State, actions: List[St
     val = rewards[y][x] + gamma * future_reward
     return action, val
 
-def update_policy(world: World, actions: List[State], rewards: Reward, goals: Dict[State, float], v: Reward, policy: Policy, transition: float = 1.0, gamma: float = 1.0, impassible: List[str] = ["x"]) -> Tuple[Policy, Reward, Reward]:
+
+def update_policy(
+    world: World,
+    actions: List[State],
+    rewards: Reward,
+    goals: Dict[State, float],
+    v: Reward,
+    policy: Policy,
+    transition: float = 1.0,
+    gamma: float = 1.0,
+    impassible: List[str] = ["x"],
+) -> Tuple[Policy, Reward, Reward]:
     v_last = deepcopy(v)
     for x, y in get_states(world):
         if world[y][x] in impassible:
@@ -85,14 +101,25 @@ def update_policy(world: World, actions: List[State], rewards: Reward, goals: Di
             v[y][x] = goals[(x, y)]
             policy[(x, y)] = "G"
             continue
-        
+
         action_values = (get_action_value(world, (x, y), move, actions, rewards, v_last, transition, gamma) for move in get_actions((x, y), actions, world))
-        max_action, max_val = max(action_values, key = lambda x : x[1])
+        max_action, max_val = max(action_values, key=lambda x: x[1])
         policy[(x, y)] = max_action
         v[y][x] = max_val
     return policy, v, v_last
 
-def value_iteration( world: World, costs: Dict[str, int], goals: Dict[State, float], actions: List[State], gamma: float = 1.0, transition: float = 1.0, e: float = 0.01, max_iters: int = 1000, debug: bool = False,) -> Policy:
+
+def value_iteration(
+    world: World,
+    costs: Dict[str, int],
+    goals: Dict[State, float],
+    actions: List[State],
+    gamma: float = 1.0,
+    transition: float = 1.0,
+    e: float = 0.01,
+    max_iters: int = 1000,
+    debug: bool = False,
+) -> Policy:
     rows, cols = len(world), len(world[0])
 
     v = [[0.0] * cols for _ in range(rows)]
@@ -111,6 +138,7 @@ def value_iteration( world: World, costs: Dict[str, int], goals: Dict[State, flo
         t += 1
     return policy
 
+
 def pretty_print_vi(v, v_last, rewards):
     print("Rewards:")
     for row in rewards:
@@ -122,6 +150,7 @@ def pretty_print_vi(v, v_last, rewards):
     for row in v:
         print(row)
     return
+
 
 def pretty_print_policy(cols: int, rows: int, policy: Policy):
     for row in range(rows):
@@ -135,7 +164,7 @@ def pretty_print_policy(cols: int, rows: int, policy: Policy):
 def test():
     world = [["o", "o", "o", "o", "o", "o", "o"]]
     costs = {"o": 0}
-    goal = {(0, 0): 15, (6, 0): 10}
+    goal = {(0, 0): 15.0, (6, 0): 10.0}
     moves = [(-1, 0), (1, 0)]
     gamma = 0.9
 
@@ -144,30 +173,30 @@ def test():
     print("Result:")
     pretty_print_policy(len(world[0]), len(world), policy)
 
-    # world = [
-    #     [".", ".", ".", ".", ".", "."],
-    #     [".", "*", "*", "*", "*", "."],
-    #     [".", "*", "*", "*", "*", "."],
-    #     [".", "*", "*", "x", "*", "."],
-    #     [".", "*", "*", "*", "*", "."],
-    #     [".", ".", ".", ".", ".", "."],
-    #     [".", ".", ".", ".", ".", "."],
-    # ]
+    world = [
+        [".", ".", ".", ".", ".", "."],
+        [".", "*", "*", "*", "*", "."],
+        [".", "*", "*", "*", "*", "."],
+        [".", "*", "*", "x", "*", "."],
+        [".", "*", "*", "*", "*", "."],
+        [".", ".", ".", ".", ".", "."],
+        [".", ".", ".", ".", ".", "."],
+    ]
 
-    # moves = [(0, -1), (1, 0), (0, 1), (-1, 0)]
-    # costs = {".": -1, "*": -3, "^": -5, "~": -7}
-    # goal = {(len(world[0]) - 1, len(world) - 1): 100}  # Lower Right Corner FILL ME IN
-    # gamma = 0.9
+    moves = [(0, -1), (1, 0), (0, 1), (-1, 0)]
+    costs = {".": -1, "*": -3, "^": -5, "~": -7}
+    goal = {(len(world[0]) - 1, len(world) - 1): 100.0}  # Lower Right Corner FILL ME IN
+    gamma = 0.9
 
-    # print()
-    # print()
-    # policy = value_iteration(world, costs, goal, moves, gamma)
-    # pretty_print_policy(len(world[0]), len(world), policy)
+    print()
+    print()
+    policy = value_iteration(world, costs, goal, moves, gamma)
+    pretty_print_policy(len(world[0]), len(world), policy)
 
-    # print()
-    # print()
-    # policy = value_iteration(world, costs, goal, moves, gamma, 0.7)
-    # pretty_print_policy(len(world[0]), len(world), policy)
+    print()
+    print()
+    policy = value_iteration(world, costs, goal, moves, gamma, 0.7)
+    pretty_print_policy(len(world[0]), len(world), policy)
 
 
 test()
