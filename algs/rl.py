@@ -31,6 +31,12 @@ you will return a policy:
 10 until maxs |V[s] - Vlast[s]| < ε
 """
 
+World = List[List[str]]
+State = Tuple[int, int]
+Reward = List[List[float]]
+Policy = Dict[State, State | str]
+
+ACTION2TEXT = {(-1, 0): "<", (1, 0): ">", (0, 1): "v", (0, -1): "^"}
 
 def get_states(world):
     states = []
@@ -39,86 +45,71 @@ def get_states(world):
             states.append((c, r))
     return states
 
-
-def get_neighbors(x, y, moves, world):
+def get_actions(state, actions, world, impassible = ["x"], bounce_back = False):
     rows = len(world)
     cols = len(world[0])
 
-    neighbors = []
-    for dx, dy in moves:
+    x, y = state
+    moves = []
+    for dx, dy in actions:
         x_prime, y_prime = x + dx, y + dy
-        if 0 <= x_prime < cols and 0 <= y_prime < rows and world[y_prime][x_prime] != "x":
-            neighbors.append((dx, dy))
-    return neighbors
+        if 0 <= x_prime < cols and 0 <= y_prime < rows and world[y_prime][x_prime] not in impassible:
+            moves.append((dx, dy))
+        elif bounce_back:
+            moves.append((0, 0))
+    return moves
 
+def get_action_value(world: World, state: State, action: State, actions: List[State], rewards: Reward, v_last: Reward, transition: float = 1.0, gamma: float = 1.0) -> Tuple[State, float]:
+    x, y = state[0], state[1]
+    x_prime, y_prime = x + action[0], y + action[1]
+    future_reward = transition * v_last[y_prime][x_prime]
 
-def get_best_action(x, y, actions, rewards, transition, v_last, world, gamma, costs):
-    max_action = None
-    max_val = -inf
-    for dx, dy in get_neighbors(x, y, actions, world):
-        x_prime, y_prime = x + dx, y + dy
-        future_reward = transition * v_last[y_prime][x_prime]
+    if transition < 1.0:
+        other_transition = (1 - transition) / (len(actions) - 1)
+        for dx, dy in get_actions(state, actions, world, bounce_back=True):
+            x_prob, y_prob = x + dx, y + dy
+            if (x_prob, y_prob) == (x_prime, y_prime):
+                continue
+            future_reward += other_transition * v_last[y_prob][x_prob]
+    val = rewards[y][x] + gamma * future_reward
+    return action, val
 
-        if transition < 1.0:
-            for ddx, ddy in get_neighbors(x, y, actions, world):
-                other_transition = (1.0 - transition) / (len(actions) - 1)
-                if (dx, dy) != (ddx, ddy):
-                    future_reward += other_transition * v_last[y + ddy][x + ddx]
-
-        val = rewards[y][x] - costs[world[y_prime][x_prime]] + gamma * future_reward
-        if val > max_val:
-            max_val = val
-            max_action = (dx, dy)
-
-        elif val == max_val:
-            max_action = "?"
-
-    return max_action, max_val
-
-
-def update_policy(v, goals, world, actions, transition, rewards, policy, gamma, costs):
+def update_policy(world: World, actions: List[State], rewards: Reward, goals: Dict[State, float], v: Reward, policy: Policy, transition: float = 1.0, gamma: float = 1.0, impassible: List[str] = ["x"]) -> Tuple[Policy, Reward, Reward]:
     v_last = deepcopy(v)
     for x, y in get_states(world):
-        if world[y][x] == "x":
-            policy[(x,y)] = "x"
+        if world[y][x] in impassible:
+            policy[(x, y)] = "X"
             continue
 
         if (x, y) in goals:
             v[y][x] = goals[(x, y)]
-            policy[(x,y)] = "G"
+            policy[(x, y)] = "G"
             continue
-
-        max_action, max_val = get_best_action(x, y, actions, rewards, transition, v_last, world, gamma, costs)
-        policy[(x,y)] = max_action
+        
+        action_values = (get_action_value(world, (x, y), move, actions, rewards, v_last, transition, gamma) for move in get_actions((x, y), actions, world))
+        max_action, max_val = max(action_values, key = lambda x : x[1])
+        policy[(x, y)] = max_action
         v[y][x] = max_val
     return policy, v, v_last
 
-
-def value_iteration(world, costs, goals, actions, gamma, transition=1.0, e=0.01, max_iters=100, debug=False):
-    rows = len(world)
-    cols = len(world[0])
+def value_iteration( world: World, costs: Dict[str, int], goals: Dict[State, float], actions: List[State], gamma: float = 1.0, transition: float = 1.0, e: float = 0.01, max_iters: int = 1000, debug: bool = False,) -> Policy:
+    rows, cols = len(world), len(world[0])
 
     v = [[0.0] * cols for _ in range(rows)]
-    policy = {state: "G" for state in get_states(world)}
-    rewards = [[0.0] * cols for _ in range(rows)]
+    policy: Policy = {state: "G" for state in goals}
+    rewards = [[float(costs.get(x, 0.0)) for x in row] for row in world]
     for (x, y), r in goals.items():
         rewards[y][x] = r
 
     t = 0
-    while t < max_iters:
-        policy, v, v_last = update_policy(v, goals, world, actions, transition, rewards, policy, gamma, costs)
+    while max_iters < 1 or t < max_iters:
+        policy, v, v_last = update_policy(world, actions, rewards, goals, v, policy, transition, gamma)
         delta = max([abs(v[y][x] - v_last[y][x]) for x, y in get_states(world)])
-        if debug:
-            print(f"T={t}")
-            pretty_print_vi(v, v_last, rewards)
-            print("Policy")
-            pretty_print_policy(cols, rows, policy)
-            print()
+        print(t, v_last, v, policy, delta) if debug else None
         if delta < e:
             return policy
         t += 1
-    return None
-
+    return policy
 
 def pretty_print_vi(v, v_last, rewards):
     print("Rewards:")
@@ -132,21 +123,12 @@ def pretty_print_vi(v, v_last, rewards):
         print(row)
     return
 
-
-def pretty_print_policy(cols, rows, policy):
-    for r in range(rows):
-        for c in range(cols):
-            v = policy[(c,r)]
-            if v == (-1, 0):
-                v = "<"
-            elif v == (1, 0):
-                v = ">"
-            elif v == (0, 1):
-                v = "v"
-            elif v == (0, -1):
-                v = "^"
-
-            print(v, end="")
+def pretty_print_policy(cols: int, rows: int, policy: Policy):
+    for row in range(rows):
+        for col in range(cols):
+            action = policy[(col, row)]
+            tile = ACTION2TEXT[action] if isinstance(action, tuple) else action
+            print(tile, end="")
         print()
 
 
