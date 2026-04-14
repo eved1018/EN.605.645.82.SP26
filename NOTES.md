@@ -672,11 +672,37 @@ Review:
 - Regression Planning - work backwards from goal
     - "list" - FIFO stack with conjunctions of literals/predicates 
     - FIFO = BFS
-    - 
 
+# Lazy Learning:
+- skip making a model
+- kNN:
+    - Alg: 
+        - place all the data in a "database"
+        - given an unclasified example - find the k nearest neighbors in the database and then use the majority class label or average value from them.
+    - What is "nearest"?
+        - axioms of distance (eulcidian space) 
+    - Minkowski Metrics (LP):
+        - d(X,Y) = Σ(|x - y|^p)^ (1/p) where p is the dimensions
+        - p=1 d(X,Y) = manhatten dist 
 
+    - Edited KNN: 
+        - 1) edit correctly classified examples. Remove points from training set that can be classified correctly. 
+        - 2) edit misclassified examples. (prevetns overfitting) 
+        - either way use cross-validation and pruning to make this work 
+    - k should be small and odd (btw 1-21)
+        - pick k using learning curves
 
+    - Condensed kNN: 
+        - replace training data with "prototypes"
+        - prototypes = center of clusters
 
+    - mean normalization or weighted kNN can be used to scale distances
+        - learn weights from dataset using genetic algorithm 
+
+    - Catagorical data: 
+        - hamming distance - convert catagories to binary encoding
+        - value difference metric - differences in attribute frequency in training data 
+    
 
 
 
