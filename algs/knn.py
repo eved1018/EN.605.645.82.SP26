@@ -113,7 +113,7 @@ def cross_validate(dataset, k: int, label_idx: int = -1, folds: int = 10):
         null_mse = sum((query[label_idx] - mean) ** 2 for query in test) / len(test)
         r2 = 1 - (mse/null_mse)
         print(i, mse, mean, r2)
-    return mse
+    return
 
 """
 ## Problem 3: Hyperparameter Tuning
