@@ -703,7 +703,8 @@ Review:
         - hamming distance - convert catagories to binary encoding
         - value difference metric - differences in attribute frequency in training data 
     
-
+# Artificial Neural Networks:
+- 
 
 
 
