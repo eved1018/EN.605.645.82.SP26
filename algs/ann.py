@@ -99,61 +99,77 @@ create a network with the required number of input, hidden and
 
 """
 
-Node = List[float]
-Layer = List[Node]
+# Node = NamedTuple("Node", [("g", float), ("weights", List[float])])
+# Layer = List[ Tuple[List[float], List[]]
+
+
+Layer = NamedTuple("Layer", [("gs", List[float]), ("weights", List[List[float]])])
 Model = NamedTuple("Model", [("hidden", List[Layer]), ("output", Layer)])
 
 
-def make_network(n_inputs: int, n_hidden_layers: int, n_outputs: int, weight_range: float = 0.5):
-    def rand_weights(n: int) -> List[float]:
-        return [random.uniform(-weight_range, weight_range) for _ in range(n)]
 
-    hidden_layer = [rand_weights(n_inputs + 1) for _ in range(n_hidden_layers)]
-    output_layer = [rand_weights(n_hidden_layers + 1) for _ in range(n_outputs)]
-    return Model([hidden_layer], output_layer)
+def create_weights(n: int, weight_range: float) -> List[float]:
+    return [random.uniform(-weight_range, weight_range) for _ in range(n)]
 
 
-def print_model(model: Model, hidden_zs: List[List[float]], hidden_activations: List[List[float]], output_zs: List[float], output_activations: List[float]):
-    n = 1
-    for hidden_layer, zs, acts in zip(model[0], hidden_zs, hidden_activations):
-        print(f"{n},weights={hidden_layer},NA,zs={zs},acts={acts}")
-        n += 1
-    for node, z, act in zip(model[1], output_zs, output_activations):
-        print(f"{n},weights={node},z={z:.6f},act={act:.6f}")
-        n += 1
-    return
+# def create_node(g: float, n_weights: int, weight_range: float):
+#     return Node(g, create_weights(n_weights + 1, weight_range))  # handle bias
+
+def create_layer(n_nodes, g: float, n_weights, weight_range) -> Layer:
+    # return [create_node(g, n_weights, weight_range) for _ in range(n_nodes)]
+    gs = [g for _ in range(n_nodes)]
+    weights = [ create_weights(n_weights +1, weight_range)  for _ in range(n_nodes) ]
+    return Layer( gs, weights)
 
 
-def feed_forward(model: Model, example: List[float]) -> Tuple[List[List[float]], List[List[float]], List[float], List[float]]:
+
+
+def make_network(n_inputs: int, hidden_layer_sizes: List[int], n_outputs: int, weight_range: float = 0.5) -> Model:
+    hidden_layers = []
+    for i, n_nodes in enumerate(hidden_layer_sizes):
+        n_weights = hidden_layer_sizes[i - 1] if i != 0 else n_inputs
+        hidden_layers.append(create_layer(n_nodes, 0.0, n_weights, weight_range))
+
+    # output layer has number of weights set to the  number of nodes in last hidden layer
+    output_layer = create_layer(n_outputs, 0.0, hidden_layer_sizes[-1], weight_range)
+    return Model(hidden_layers, output_layer)
+
+
+# def print_model(model: Model, hidden_zs: List[List[float]], hidden_activations: List[List[float]], output_zs: List[float], output_activations: List[float]):
+#     n = 1
+#     for hidden_layer, zs, acts in zip(model.hidden, hidden_zs, hidden_activations):
+#         print(f"{n},weights={hidden_layer},NA,zs={zs},acts={acts}")
+#         n += 1
+#     for node, z, act in zip(model[1], output_zs, output_activations):
+#         print(f"{n},weights={node},z={z:.6f},act={act:.6f}")
+#         n += 1
+#     return
+
+
+def feed_forward(model: Model, example: List[float]) -> Tuple[List[List[float]], List[float]]:
     example = [1.0] + example  # add bias
     hidden_zs = []
-    hidden_activations = []
     for hidden_layer in model.hidden:
-        layer_activation = []
         layer_zs = []
-        for node in hidden_layer:
-            z = sum(theta * x for theta, x in zip(node, example))
-            activation = 1.0 / (1.0 + exp(-1.0 * z))  # 1/ (1 + e^-z)
+        for i, weights in enumerate(hidden_layer.weights):
+            z = sum(theta * x for theta, x in zip(weights, example))
+            hidden_layer.gs[i] = 1.0 / (1.0 + exp(-1.0 * z))  # 1/ (1 + e^-z)
             layer_zs.append(z)
-            layer_activation.append(activation)
-
         hidden_zs.append(layer_zs)
-        hidden_activations.append(layer_activation)
 
     output_zs = []
-    output_activations = []
-    for output_layer in model.output:
-        biased_acts = [1.0] + hidden_activations[-1]
-        z = sum(theta * x for theta, x in zip(output_layer, biased_acts))
-        activation = 1.0 / (1.0 + exp(-1.0 * z))  # 1/ (1 + e^-z)
+    for i, weights in enumerate(model.output.weights):
+        biased_acts = [1.0] + model.hidden[-1].gs
+        z = sum(theta * x for theta, x in zip(weights, biased_acts))
+        model.output.gs[i] = 1.0 / (1.0 + exp(-1.0 * z))  # 1/ (1 + e^-z)
         output_zs.append(z)
-        output_activations.append(activation)
-    return hidden_zs, hidden_activations, output_zs, output_activations
+
+    return hidden_zs, output_zs
 
 
-def calculate_output_error(output_activations: List[float], label: List[float]) -> List[float]:
+def calculate_output_error(model: Model, label: List[float]) -> List[float]:
     deltas = []
-    for y_hat, y in zip(output_activations, label):
+    for (y_hat, _), y in zip(model.output, label):
         delta = y_hat * (1 - y_hat) * (y - y_hat)
         deltas.append(delta)
     return deltas
@@ -214,7 +230,7 @@ def learn_model(data: List[List[Any]], n_hidden_layers: int, epsilon: float = 10
             features, label = example[:-1], example[-1]
             hidden_zs, hidden_activations, output_zs, output_activations = feed_forward(model, example)
             backprop(model, features, label, hidden_activations, output_activations, alpha)
-            error += sum((y - o) ** 2 for y, o in zip(label, output_activations))
+            error += sum((y - y_hat) ** 2 for y, y_hat in zip(label, output_activations))
 
         error = error / len(data)
         if error > prev_error:
@@ -225,6 +241,7 @@ def learn_model(data: List[List[Any]], n_hidden_layers: int, epsilon: float = 10
 
         if abs(error - prev_error) < epsilon:
             return model
+
         prev_error = error
         iterations += 1
 
