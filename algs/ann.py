@@ -155,27 +155,25 @@ def calculate_hidden_error(model , hidden_activations, delta_os):
     return deltas
 
 
-def update_weights(model, example, delta_hs, alpha):
+def update_weights(model, example, delta_hs, alpha, hidden_activations, delta_os):
     example = [1.0] + example  # add bias
 
-    for hidden_layer in model[0]:
-        for theta, dh, x in zip(hidden_layer, delta_hs, example):
-            theta += alpha * dh * x  # update in place?
+    for l, hidden_layer in enumerate(model[0]):
+        for i, (theta, dh, x) in enumerate(zip(hidden_layer, delta_hs, example)):
+            model[0][i][l] += alpha * dh * x  # update in place?
     
-    for output_layer in model[0]:
-        for theta, , do in zip(output_layer, delta_os, delta_os):
-            theta += alpha * do * y  # update in place?
-    
-
+    for l, output_layer in enumerate(model[1]):
+        for i, (theta, activation, do) in enumerate(zip(output_layer, hidden_activations, delta_os)):
+            model[1][i][l] = theta + alpha * activation * do  # update in place?
     return
 
 
-def backprop(model, actual, hidden_activations, output_activations):
+def backprop(model, example, actual, hidden_activations, output_activations, alpha):
     delta_os = calculate_output_error(output_activations, actual)
     print(delta_os)
     delta_hs = calculate_hidden_error(model , hidden_activations, delta_os)
     print(delta_hs)
-    # model = update_weights(model, example)
+    update_weights(model, example, delta_hs, alpha, hidden_activations, delta_os)
     return model
 
 
@@ -209,10 +207,13 @@ def test():
     hidden_layer = [[0.01, 0.26, -0.42], [-0.05, 0.78, 0.19], [0.42, -0.23, 0.37]]
     output_layer = [[0.2, 0.61, 0.12, -0.9], [0.3, 0.28, -0.34, 0.10]]
     model = [hidden_layer, output_layer]
+    alpha = 0.01
     hidden_zs, hidden_activations, output_zs, output_activations = feed_forward(model, input_layer)
     print_model(model, hidden_zs, hidden_activations, output_zs, output_activations)
     print()
-    backprop(model, actual, hidden_activations, output_activations)
+    backprop(model, input_layer, actual, hidden_activations, output_activations, alpha)
+    print_model(model, hidden_zs, hidden_activations, output_zs, output_activations)
+
 
 
 test()
