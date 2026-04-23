@@ -1,5 +1,3 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import random
 from typing import Dict, List, Set, Tuple, Any, NamedTuple
 from math import exp, inf
@@ -46,9 +44,6 @@ def blur(data) -> List[Any]:
     return noisy_readings + [data[-1]]
 
 
-# view_sensor_image( blur( clean_data["swamp"][0]))
-
-
 def encode(terrain: str) -> List[int] | None:
     terrain2bin = {
         "hills": [1, 0, 0, 0],
@@ -81,160 +76,94 @@ def generate_data(data: Dict[str, List[Any]], n: int) -> List[List[Any]]:
     return result
 
 
-"""
-create a network with the required number of input, hidden and  
- output nodes. This mostly amounts to creating a List of Lists of 
- thetas for the hidden and output layers. Don't forget biases for  
- every node.  
-2 initialize all thetas to small random values (0..1) or (-1, 1). 
-3 until termination  
-4     for each point in the training set  
-          # feed forward step  
-5         calculate output of every node in the network.  
-          # back prop step  
-6         calculate delta_o for every output node  
-7         calculate delta_h for every hidden node  
-8         update all of the thetas     
-
-
-"""
-
-# Node = NamedTuple("Node", [("g", float), ("weights", List[float])])
-# Layer = List[ Tuple[List[float], List[]]
-
-
-Layer = NamedTuple("Layer", [("gs", List[float]), ("weights", List[List[float]])])
-Model = NamedTuple("Model", [("hidden", List[Layer]), ("output", Layer)])
-
+# layers ->  Node -> bias+weights
+Model = List[List[List[float]]]
 
 
 def create_weights(n: int, weight_range: float) -> List[float]:
-    return [random.uniform(-weight_range, weight_range) for _ in range(n)]
+    return [random.uniform(-weight_range, weight_range) for _ in range(n + 1)]
 
 
-# def create_node(g: float, n_weights: int, weight_range: float):
-#     return Node(g, create_weights(n_weights + 1, weight_range))  # handle bias
+def make_network(n_inputs: int, hidden_layer_nodes: List[int], n_outputs: int, weight_range: float):
+    model = []
+    for i, size in enumerate(hidden_layer_nodes):
+        n_weights = hidden_layer_nodes[i - 1] if i != 0 else n_inputs
+        model.append([create_weights(n_weights, weight_range) for _ in range(size)])
 
-def create_layer(n_nodes, g: float, n_weights, weight_range) -> Layer:
-    # return [create_node(g, n_weights, weight_range) for _ in range(n_nodes)]
-    gs = [g for _ in range(n_nodes)]
-    weights = [ create_weights(n_weights +1, weight_range)  for _ in range(n_nodes) ]
-    return Layer( gs, weights)
-
-
+    model.append([create_weights(hidden_layer_nodes[-1], weight_range) for _ in range(n_outputs)])
+    return model
 
 
-def make_network(n_inputs: int, hidden_layer_sizes: List[int], n_outputs: int, weight_range: float = 0.5) -> Model:
-    hidden_layers = []
-    for i, n_nodes in enumerate(hidden_layer_sizes):
-        n_weights = hidden_layer_sizes[i - 1] if i != 0 else n_inputs
-        hidden_layers.append(create_layer(n_nodes, 0.0, n_weights, weight_range))
-
-    # output layer has number of weights set to the  number of nodes in last hidden layer
-    output_layer = create_layer(n_outputs, 0.0, hidden_layer_sizes[-1], weight_range)
-    return Model(hidden_layers, output_layer)
-
-
-# def print_model(model: Model, hidden_zs: List[List[float]], hidden_activations: List[List[float]], output_zs: List[float], output_activations: List[float]):
-#     n = 1
-#     for hidden_layer, zs, acts in zip(model.hidden, hidden_zs, hidden_activations):
-#         print(f"{n},weights={hidden_layer},NA,zs={zs},acts={acts}")
-#         n += 1
-#     for node, z, act in zip(model[1], output_zs, output_activations):
-#         print(f"{n},weights={node},z={z:.6f},act={act:.6f}")
-#         n += 1
-#     return
+def feed_forward(model: Model, example: List[float]) -> List[List[float]]:
+    activations = []
+    biased_input = [1.0] + example
+    for layer in model:
+        layer_activations = []
+        for weights in layer:
+            z = sum(theta * x for theta, x in zip(weights, biased_input))
+            layer_activations.append(1.0 / (1.0 + exp(-1.0 * z)))
+        biased_input = [1.0] + layer_activations
+        activations.append(layer_activations)
+    return activations
 
 
-def feed_forward(model: Model, example: List[float]) -> Tuple[List[List[float]], List[float]]:
-    example = [1.0] + example  # add bias
-    hidden_zs = []
-    for hidden_layer in model.hidden:
-        layer_zs = []
-        for i, weights in enumerate(hidden_layer.weights):
-            z = sum(theta * x for theta, x in zip(weights, example))
-            hidden_layer.gs[i] = 1.0 / (1.0 + exp(-1.0 * z))  # 1/ (1 + e^-z)
-            layer_zs.append(z)
-        hidden_zs.append(layer_zs)
-
-    output_zs = []
-    for i, weights in enumerate(model.output.weights):
-        biased_acts = [1.0] + model.hidden[-1].gs
-        z = sum(theta * x for theta, x in zip(weights, biased_acts))
-        model.output.gs[i] = 1.0 / (1.0 + exp(-1.0 * z))  # 1/ (1 + e^-z)
-        output_zs.append(z)
-
-    return hidden_zs, output_zs
-
-
-def calculate_output_error(model: Model, label: List[float]) -> List[float]:
+def calculate_output_error(activations: List[List[float]], label: List[float]):
     deltas = []
-    for (y_hat, _), y in zip(model.output, label):
+    for y_hat, y in zip(activations[-1], label):
         delta = y_hat * (1 - y_hat) * (y - y_hat)
         deltas.append(delta)
     return deltas
 
 
-def calculate_hidden_error(model: Model, hidden_activations: List[List[float]], delta_os: List[float]) -> List[List[float]]:
-    deltas = []
-    for layer_activations in hidden_activations:
+def calculate_hidden_error(model: Model, activations: List[List[float]], delta_os: List[float]):
+    delta_hs = [delta_os]
+    for layer_idx in range(len(model) - 2, -1, -1):  # calc error from back to front
         layer_deltas = []
-        for h, y_hat in enumerate(layer_activations):
-            s = 0
-            for output_layer, do in zip(model.output, delta_os):
-                e = output_layer[h + 1] * do  # +1 to skip bias
-                s += e
-            delta = y_hat * (1 - y_hat) * s
+        for node_idx in range(len(activations[layer_idx])):
+            y_hat = activations[layer_idx][node_idx]
+            delta = 0.0
+            prev_layer = model[layer_idx + 1]
+            for prev_node_idx, prev_delta in enumerate(delta_hs[0]):
+                delta += prev_layer[prev_node_idx][node_idx + 1] * prev_delta
+            delta *= y_hat * (1 - y_hat)
             layer_deltas.append(delta)
-        deltas.append(layer_deltas)
-    return deltas
+        delta_hs.insert(0, layer_deltas)
+    return delta_hs
 
 
-def update_weights(model: Model, example: List[float], delta_hs: List[List[float]], hidden_activations: List[List[float]], delta_os: List[float], alpha: float) -> Model:
-    biased_input = [1.0] + example
-
-    # Hidden layers
-    for layer_idx in range(len(model.hidden)):
-        layer_deltas = delta_hs[layer_idx]  # one scalar per node
-        for n, dh in enumerate(layer_deltas):
-            for w, x in enumerate(biased_input):
-                model[0][layer_idx][n][w] += alpha * dh * x
-
-    # Output layer
-    biased_hidden = [1.0] + hidden_activations[-1]  # bias + hidden activations
-    for n, do in enumerate(delta_os):
-        for w, x in enumerate(biased_hidden):
-            model[1][n][w] += alpha * do * x
-
+def update_weights(model: Model, features: List[float], activations: List[List[float]], deltas_hs: List[List[float]], alpha: float):
+    for layer_idx, (layer, layer_deltas) in enumerate(zip(model, deltas_hs)):
+        biased_input = [1.0] + activations[layer_idx - 1] if layer_idx != 0 else [1.0] + features
+        for node_idx, (node, delta) in enumerate(zip(layer, layer_deltas)):
+            for weight_idx, weight in enumerate(node):
+                model[layer_idx][node_idx][weight_idx] = weight + alpha * delta * biased_input[weight_idx]
     return model
 
 
-def backprop(
-    model: Model, example: List[Any], actual: List[Any], hidden_activations: List[List[float]], output_activations: List[float], alpha: float
-) -> Tuple[List[float], List[List[float]]]:
-    delta_os = calculate_output_error(output_activations, actual)
-    delta_hs = calculate_hidden_error(model, hidden_activations, delta_os)
-    model = update_weights(model, example, delta_hs, hidden_activations, delta_os, alpha)
-    return delta_os, delta_hs
+def backprop(model: Model, activations: List[List[float]], features: List[Any], actual: List[Any], alpha: float) -> List[List[float]]:
+    delta_os = calculate_output_error(activations, actual)
+    delta_hs = calculate_hidden_error(model, activations, delta_os)
+    model = update_weights(model, features, activations, delta_hs, alpha)
+    return delta_hs
 
 
 def learn_model(data: List[List[Any]], n_hidden_layers: int, epsilon: float = 10**-5, alpha: float = 0.01, verbose: bool = True, max_iters: int = 10000, print_freq: int = 1000):
     n_inputs = len(data[0]) - 1
     n_outputs = len(data[0][-1])
-    model = make_network(n_inputs, n_hidden_layers, n_outputs)
+    model = make_network(n_inputs, [n_hidden_layers], n_outputs, 0.5)
     iterations = 0
     prev_error = 0
     while iterations < max_iters:
         error = 0.0
         for example in data:
             features, label = example[:-1], example[-1]
-            hidden_zs, hidden_activations, output_zs, output_activations = feed_forward(model, example)
-            backprop(model, features, label, hidden_activations, output_activations, alpha)
-            error += sum((y - y_hat) ** 2 for y, y_hat in zip(label, output_activations))
-
+            activations = feed_forward(model, features)
+            backprop(model, activations, features, label, alpha)
+            error += sum((y - y_hat) ** 2 for y, y_hat in zip(label, activations[-1]))
         error = error / len(data)
+
         if error > prev_error:
-            alpha /= 10
+            alpha /= 10 
 
         if verbose and (iterations % print_freq == 0):
             print(f"{iterations}\t{error:.6f}")
@@ -244,36 +173,22 @@ def learn_model(data: List[List[Any]], n_hidden_layers: int, epsilon: float = 10
 
         prev_error = error
         iterations += 1
-
     return None
 
 
 def apply_model(model: Model, test_data: List[List[Any]], labeled=False):
-    """
-
-    `apply_model` takes the ANN (the model) and either labeled or unlabeled data.
-    If the data is unlabeled, it will return predictions for each observation as a List of Tuples
-    of the inferred value (0 or 1) and the actual probability (so something like (1, 0.73) or (0, 0.19)
-    so you have [(0, 0.30), (1, 0.98), (0, 0.87), (0, 0.12)]. Note that unlike the logistic regression,
-    the threshold for 1 is not 0.5 but which value is largest (0.98 in this case).
-
-    If the data is labeled, you will return a List of List of Tuples of the actual value (0 or 1)
-    and the predicted value (0 or 1). For a single data point, you'll have the pairs of actual values
-    [(0, 1), (0, 0), (0, 0), (1, 0)] is a misclassification and [(0, 0), (0, 0), (1, 1), (0, 0)] will
-    be a correct classification. Then you have a List of *those*, one for each observation.
-    """
     result = []
     for example in test_data:
         features = example[:-1] if labeled else example
-        _, _, _, output_activations = feed_forward(model, features)
+        activations = feed_forward(model, features)
         max_node, max_val = None, -inf
-        for node, y_hat in enumerate(output_activations):
+        for node, y_hat in enumerate(activations[-1]):
             if y_hat > max_val:
                 max_val = y_hat
                 max_node = node
 
         row = []
-        for node, (y, y_hat) in enumerate(zip(example[-1], output_activations)):
+        for node, (y, y_hat) in enumerate(zip(example[-1], activations[-1])):
             prediction = 1 if node == max_node else 0
             if labeled:
                 row.append((y, prediction))
@@ -292,18 +207,26 @@ def evaluate(result):
     return
 
 
+def print_model(model: Model, activations: List[List[float]], deltas: List[List[float]]) -> None:
+    print(f"layer,node,weights,activation,delta")
+    r = 4
+    for layer_idx, (layer, layer_acts, layer_deltas) in enumerate(zip(model, activations, deltas)):
+        for node_idx, (weights, g, delta) in enumerate(zip(layer, layer_acts, layer_deltas)):
+            print(f"{layer_idx},{node_idx},{[round(w, r) for w in weights]},{round(g, r)},{round(delta, r)}")
+
+
 def test1():
     input_layer = [0.52, -0.97]
     actual = [1, 0]
-    hidden_layer = [[0.01, 0.26, -0.42], [-0.05, 0.78, 0.19], [0.42, -0.23, 0.37]]
-    output_layer = [[0.2, 0.61, 0.12, -0.9], [0.3, 0.28, -0.34, 0.10]]
-    model = Model([hidden_layer], output_layer)
+    model = [[[0.01, 0.26, -0.42], [-0.05, 0.78, 0.19], [0.42, -0.23, 0.37]], [[0.2, 0.61, 0.12, -0.9], [0.3, 0.28, -0.34, 0.10]]]
     alpha = 0.01
-    hidden_zs, hidden_activations, output_zs, output_activations = feed_forward(model, input_layer)
-    print_model(model, hidden_zs, hidden_activations, output_zs, output_activations)
+    activations = feed_forward(model, input_layer)
+    delta_hs = backprop(model, activations, input_layer, actual, alpha)
+    print_model(model, activations, delta_hs)
     print()
-    backprop(model, input_layer, actual, hidden_activations, output_activations, alpha)
-    print_model(model, hidden_zs, hidden_activations, output_zs, output_activations)
+    delta_hs = backprop(model, activations, input_layer, actual, alpha)
+    print_model(model, activations, delta_hs)
+    return
 
 
 def test2(clean_data):
@@ -316,5 +239,5 @@ def test2(clean_data):
     evaluate(result)
 
 
-# test1()
+test1()
 test2(clean_data)
