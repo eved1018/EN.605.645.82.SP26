@@ -150,7 +150,7 @@ def update_weights(model: Model, features: List[float], activations: List[List[f
         prev_layer_activations = [1.0] + activations[layer_idx - 1] if layer_idx != 0 else [1.0] + features
         for node_idx, (node, delta) in enumerate(zip(layer, layer_deltas)):
             for weight_idx, weight in enumerate(node):
-                # weight index is also the index into the prev layer
+                # weight index is also the node index in the prev layer
                 layer[node_idx][weight_idx] = weight + alpha * delta * prev_layer_activations[weight_idx]
     return model
 
@@ -229,7 +229,7 @@ def print_model(model: Model, activations: List[List[float]], deltas: List[List[
     for layer_idx, (layer, layer_acts, layer_deltas) in enumerate(zip(model[0] + [model[1]], activations, deltas)):
         for node_idx, (weights, g, delta) in enumerate(zip(layer, layer_acts, layer_deltas)):
             print(f"{layer_idx},{node_idx},{[round(w, r) for w in weights]},{round(g, r)},{round(delta, r)}")
-
+    return
 
 def test1():
     input_layer = [0.52, -0.97]
