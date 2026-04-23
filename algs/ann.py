@@ -55,7 +55,7 @@ def encode(terrain: str) -> List[int] | None:
     return terrain2bin.get(terrain, None)
 
 
-def decode(bin: List[int]) -> str| None:
+def decode(bin: List[int]) -> str | None:
     bin2terrain = ["hills", "swamp", "forest", "plains"]
     for i, terrain in zip(bin, bin2terrain):
         if i == 1:
@@ -88,23 +88,23 @@ def generate_data(data: Dict[str, List[Any]], n: int) -> List[List[Any]]:
 Model = List[List[List[float]]]
 
 
-def create_weights(n: int, weight_range: float) -> List[float]:
-    return [random.uniform(-weight_range, weight_range) for _ in range(n + 1)]
+def create_biased_weights(n_weights: int, weight_range: float) -> List[float]:
+    return [random.uniform(-weight_range, weight_range) for _ in range(n_weights + 1)]
 
 
-def make_network(n_inputs: int, hidden_layer_nodes: List[int], n_outputs: int, weight_range: float):
+def make_network(n_inputs: int, n_nodes: int, n_layers: int, n_outputs: int, weight_range: float):
     model = []
-    for i, size in enumerate(hidden_layer_nodes):
-        n_weights = hidden_layer_nodes[i - 1] if i != 0 else n_inputs
-        model.append([create_weights(n_weights, weight_range) for _ in range(size)])
+    for i in range(n_layers):
+        n_weights = n_nodes if i != 0 else n_inputs
+        model.append([create_biased_weights(n_weights, weight_range) for _ in range(n_nodes)])
 
-    model.append([create_weights(hidden_layer_nodes[-1], weight_range) for _ in range(n_outputs)])
+    model.append([create_biased_weights(n_nodes, weight_range) for _ in range(n_outputs)])
     return model
 
 
-def feed_forward(model: Model, example: List[float]) -> List[List[float]]:
+def feed_forward(model: Model, features: List[float]) -> List[List[float]]:
     activations = []
-    biased_input = [1.0] + example
+    biased_input = [1.0] + features
     for layer in model:
         layer_activations = []
         for weights in layer:
@@ -130,9 +130,9 @@ def calculate_hidden_error(model: Model, activations: List[List[float]], delta_o
         for node_idx in range(len(activations[layer_idx])):
             y_hat = activations[layer_idx][node_idx]
             delta = 0.0
-            prev_layer = model[layer_idx + 1]
-            for prev_node_idx, prev_delta in enumerate(delta_hs[0]):
-                delta += prev_layer[prev_node_idx][node_idx + 1] * prev_delta
+            next_layer = model[layer_idx + 1]
+            for next_node_idx, next_delta in enumerate(delta_hs[0]):
+                delta += next_layer[next_node_idx][node_idx + 1] * next_delta
             delta *= y_hat * (1 - y_hat)
             layer_deltas.append(delta)
         delta_hs.insert(0, layer_deltas)
@@ -141,24 +141,27 @@ def calculate_hidden_error(model: Model, activations: List[List[float]], delta_o
 
 def update_weights(model: Model, features: List[float], activations: List[List[float]], deltas_hs: List[List[float]], alpha: float):
     for layer_idx, (layer, layer_deltas) in enumerate(zip(model, deltas_hs)):
-        biased_input = [1.0] + activations[layer_idx - 1] if layer_idx != 0 else [1.0] + features
+        prev_layer_activations = [1.0] + activations[layer_idx - 1] if layer_idx != 0 else [1.0] + features
         for node_idx, (node, delta) in enumerate(zip(layer, layer_deltas)):
             for weight_idx, weight in enumerate(node):
-                model[layer_idx][node_idx][weight_idx] = weight + alpha * delta * biased_input[weight_idx]
+                # weight index is also the index into the prev layer
+                model[layer_idx][node_idx][weight_idx] = weight + alpha * delta * prev_layer_activations[weight_idx]
     return model
 
 
-def backprop(model: Model, activations: List[List[float]], features: List[Any], actual: List[Any], alpha: float) -> List[List[float]]:
-    delta_os = calculate_output_error(activations, actual)
+def backprop(model: Model, activations: List[List[float]], features: List[Any], label: List[Any], alpha: float) -> List[List[float]]:
+    delta_os = calculate_output_error(activations, label)
     delta_hs = calculate_hidden_error(model, activations, delta_os)
     model = update_weights(model, features, activations, delta_hs, alpha)
     return delta_hs
 
 
-def learn_model(data: List[List[Any]], n_hidden_layers: int, epsilon: float = 10**-5, alpha: float = 0.01, verbose: bool = True, max_iters: int = 10000, print_freq: int = 1000):
+def learn_model(
+    data: List[List[Any]], n_nodes: int, n_layers: int = 1, epsilon: float = 10**-5, alpha: float = 0.01, verbose: bool = True, max_iters: int = 1000000, print_freq: int = 1000
+) -> Tuple[List[List[List[float]]], List[List[float]]] | None:
     n_inputs = len(data[0]) - 1
     n_outputs = len(data[0][-1])
-    model = make_network(n_inputs, [n_hidden_layers], n_outputs, 0.5)
+    model = make_network(n_inputs, n_nodes, n_layers, n_outputs, 0.5)
     iterations = 0
     prev_error = 0
     while iterations < max_iters:
@@ -177,7 +180,7 @@ def learn_model(data: List[List[Any]], n_hidden_layers: int, epsilon: float = 10
             print(f"{iterations}\t{error:.6f}")
 
         if abs(error - prev_error) < epsilon:
-            return model
+            return (model[:-1], model[-1])
 
         prev_error = error
         iterations += 1
@@ -211,8 +214,7 @@ def evaluate(result):
     for row in result:
         if (1, 1) in row:
             tp += 1
-    print(tp / len(result))
-    return
+    return tp / len(result)
 
 
 def print_model(model: Model, activations: List[List[float]], deltas: List[List[float]]) -> None:
@@ -239,16 +241,20 @@ def test1():
 
 def test2(clean_data):
     dataset = generate_data(clean_data, 100)
-    model = learn_model(dataset, 1)
     test_set = generate_data(clean_data, 20)
-    result = apply_model(model, test_set, True)
-    for r in result:
-        actual = decode([i[0] for i in r])
-        pred = decode([i[1] for i in r])
-        if pred != actual:
-            print(pred, actual)
-    evaluate(result)
+    for l in [2, 4, 8]:
+        model = learn_model(dataset, l)
+        assert model is not None
+        result = apply_model(model, test_set, True)
+        for r in result:
+            actual = decode([i[0] for i in r])
+            pred = decode([i[1] for i in r])
+            x = "X" if pred != actual else "Y"
+            print(x, end="")
+        print()
+        accuracy = evaluate(result)
+        print(l, accuracy)
 
 
-test1()
+# test1()
 test2(clean_data)
