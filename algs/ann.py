@@ -55,6 +55,14 @@ def encode(terrain: str) -> List[int] | None:
     return terrain2bin.get(terrain, None)
 
 
+def decode(bin: List[int]) -> str| None:
+    bin2terrain = ["hills", "swamp", "forest", "plains"]
+    for i, terrain in zip(bin, bin2terrain):
+        if i == 1:
+            return terrain
+    return None
+
+
 def generate_data(data: Dict[str, List[Any]], n: int) -> List[List[Any]]:
     """
     Generates an endless supply of blurred data from a collection of terrain prototypes.
@@ -163,7 +171,7 @@ def learn_model(data: List[List[Any]], n_hidden_layers: int, epsilon: float = 10
         error = error / len(data)
 
         if error > prev_error:
-            alpha /= 10 
+            alpha /= 10
 
         if verbose and (iterations % print_freq == 0):
             print(f"{iterations}\t{error:.6f}")
@@ -235,7 +243,10 @@ def test2(clean_data):
     test_set = generate_data(clean_data, 20)
     result = apply_model(model, test_set, True)
     for r in result:
-        print(r)
+        actual = decode([i[0] for i in r])
+        pred = decode([i[1] for i in r])
+        if pred != actual:
+            print(pred, actual)
     evaluate(result)
 
 
