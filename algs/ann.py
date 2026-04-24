@@ -1,6 +1,6 @@
 import random
 from typing import Dict, List, Set, Tuple, Any, NamedTuple
-from math import exp, inf
+from math import exp, inf, log10
 
 clean_data = {
     "plains": [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, "plains"]],
@@ -231,6 +231,7 @@ def print_model(model: Model, activations: List[List[float]], deltas: List[List[
             print(f"{layer_idx},{node_idx},{[round(w, r) for w in weights]},{round(g, r)},{round(delta, r)}")
     return
 
+
 def test1():
     input_layer = [0.52, -0.97]
     actual = [1, 0]
@@ -253,7 +254,7 @@ def test2(clean_data):
         assert model is not None
         result = apply_model(model, dataset, True)
         error = evaluate(result)
-        print(l, error) 
+        print(l, error)
         result = apply_model(model, test_set, True)
         for r in result:
             actual = decode([i[0] for i in r])
@@ -266,5 +267,122 @@ def test2(clean_data):
         print()
     return
 
+
 # test1()
-test2(clean_data)
+# test2(clean_data)
+
+
+# # N number of data points in training set
+# # d number of dimentions (nodes?)
+# # r class labels
+# def psuedo(x, d, N, r, alpha):
+#     w = []
+#     for j in range(d):
+#         w.append(rand(-0.01,0.01))
+#
+#     while not converged:
+#         dw = []
+#         for j in range(d):
+#             dw.append(0.0)
+#         for t in range(1, N):
+#             o = 0
+#             for j in range(d):
+#                 o = o + w[j] * x[t][j]
+#             y = sigmoid(o)
+#             for j in range(d):
+#                 dw[j] = dw[j] + (r[t] - y) * x[t][j]
+#         for j in range(d):
+#             w[j] = w[j] + alpha * dw[j]
+#
+
+
+def randrange(low, high):
+    return random.uniform(low, high)
+
+
+def shuffle(data):
+    random.shuffle(data)
+    return data
+
+
+def sigmoid(z):
+    return 1.0 / (1.0 + exp(-1.0 * z))
+
+
+# K is number of output nodes
+# d is number of input features per example
+# H is the number of hidden units in hidden layer
+def mlp(training, K, d, H, alpha=0.01, epsilon=10 * -5, weight_range=0.01, max_iterations=10000):
+    v = [[randrange(-weight_range, weight_range) for j in range(d)] for h in range(H)]  # weights from hidden to output
+    w = [[randrange(-weight_range, weight_range) for h in range(H)] for i in range(K)]  # weights from input to hidden
+
+    iterations = 0
+    prev_error = 0.0
+    while iterations < max_iterations:
+        curr_error = 0
+        for t in shuffle(training):
+            x, r = t[:-1], t[-1]
+            e = 0.0
+            z, y, dv, dw = [], [], [], []
+            for h in range(H):
+                z[h] = sigmoid(sum([w_h * x_t for w_h, x_t in zip(w[h], x)]))
+            for i in range(K):
+                y[i] = sum([v_i * z_h for v_i, z_h in zip(v[i], z)])
+                e += r[i] * log10(y[i])
+
+            for i in range(K):
+                dv.append([alpha * (r[i] - y[i]) * z[h] for h in range(H)])
+
+            for h in range(H):
+                s = sum([(r[i] - y[i]) * v[i][h] for i in range(K)])
+                c = alpha * s * z[h] * (1 - z[h])
+                dw.append([alpha * c * x[j] for j in range(d)])
+
+            for i in range(K):
+                for h in range(H):
+                    v[i][h] = v[i][h] + dv[i][h]
+
+            for h in range(H):
+                for j in range(d):
+                    w[h][j] = w[h][j] + dw[h][j]
+
+        if curr_error > prev_error:
+            alpha /= 10
+
+        if abs(curr_error - prev_error) < epsilon:
+            return (w, v)
+
+    return None
+
+
+def test2(clean_data):
+    dataset = generate_data(clean_data, 100)
+    test_set = generate_data(clean_data, 100)
+    d = len(test_set[0]) - 1
+
+    n_inputs = len(dataset[0]) - 1
+    n_outputs = len(dataset[0][-1])
+
+
+    for l in [2, 4, 8]:
+        model = mlp(dataset, n_outputs, n_inputs, l)
+        # model = learn_model(dataset, l)
+        assert model is not None
+        result = apply_model(model, dataset, True)
+        error = evaluate(result)
+        print(l, error)
+        result = apply_model(model, test_set, True)
+        for r in result:
+            actual = decode([i[0] for i in r])
+            pred = decode([i[1] for i in r])
+            x = "X" if pred != actual else "Y"
+            print(x, end="")
+        print()
+        error = evaluate(result)
+        print(l, error)
+        print()
+    return
+
+
+
+
