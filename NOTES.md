@@ -704,7 +704,20 @@ Review:
         - value difference metric - differences in attribute frequency in training data 
     
 # Artificial Neural Networks:
-- 
+- Perceptron: 
+    - attempt to model a single neuron 
+    - prototypes: training data 
+    - neuron was composed of: 
+        - bias 
+        - weights
+        - threshold function
+    - each neuron would take the weighted sum of the input vector and then apply the threshold function. 
+    - How do we find the weights?
+        - perceptron learning rule: update each weight by: theta = theta + yx for observed feature x and correct label y
+
+- Multi-layer Perceptron:
+    - 
+
 
 
 
