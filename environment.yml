@@ -14,3 +14,4 @@ dependencies:
   - networkx
   - python-box=7.3
   - streamlit=1.45
+  - pytorch
